@@ -13,7 +13,7 @@ rebooted, etc.
 ## License
 
 This software is provided under the terms of the GNU General Public License, v3. For complete info, refer to LICENSE.txt
-provided with the source code, or go to <http://www.gnu.org/licenses/gpl.html> for full information about the license.
+(provided with the source code), or go to <http://www.gnu.org/licenses/gpl.html>.
 
 > **Note**: The license does not restrict your ability to use the software itself; it affects only your ability to
 > modify and use the software's *code*, or to claim ownership of it.

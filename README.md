@@ -93,6 +93,32 @@ pushes the current directory on the stack.
 
 pops the last pushed directory from the stack and transports you there.
 
+## Special Conveniences
+
+I've added these special conveniences because I use them.  ;)
+
+### Using the `@` symbol
+
+If you enter an `@` symbol at the beginning of a command, it assumes you mean `go`. So you can type:
+
+    $ dhop @docs
+
+This will take you to the named location 'docs'.
+
+You can also use `@` with `push`:
+
+    $ dhop push @docs
+
+Which will take you to the location `docs`, but will first push the current directory onto the stack.
+
+### Auto-interpretation of paths
+
+If the command isn't recognized, but refers to an actual filesystem location, `dhop` will assume that you want to go there, so typing:
+
+    $ dhop ~
+
+will take you to your home directory (on *nix, *BSD, and Mac OS X, at least).
+
 ---
 Copyright &copy; 2013, Abstrys / Eron Hennessey
 

@@ -1,6 +1,6 @@
 # Dhop - it takes you places!
 
-DirHop (command name: `dhop`) is a command-line utility written in Ruby that provides a number of ways to get around your
+Dhop (command name: `dhop`) is a command-line utility written in Ruby that provides a number of ways to get around your
 filesystem quickly:
 
 * marking and recalling a single, unnamed location.

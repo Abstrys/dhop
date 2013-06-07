@@ -1,216 +1,302 @@
-# A command-line utility for hopping around the filesystem.
-#
-# Copyright (C) 2013, Abstrys / Eron Hennessey
-#
-# This file is released under the terms of the GNU General Public License, v3.
-# For details about this license, see LICENSE.txt or go to
-# http://www.gnu.org/licenses/gpl.html
-#
-# Full documentation is in this file (run yard doc to generate it) and in README.md
-#
+require 'yaml' # only needed by the dump method
+require 'rbconfig' # to find the host OS.
 module Abstrys
-  class DirHop
+  # A command-line utility for hopping around the filesystem.
+  #
+  # Copyright (C) 2013, Abstrys / Eron Hennessey
+  #
+  # This file is released under the terms of the GNU General Public License, v3.
+  # For details about this license, see LICENSE.txt or go to
+  # http://www.gnu.org/licenses/gpl.html
+  #
+  # Full documentation is in this file (run yard doc to generate it) and in README.md
+  #
+  class Dhop
 
-     @@DHOP_CMD_FILE = '.dhopcmd'
-     @@DHOP_STORE = '.dhoprb'
+    @@DHOP_CMD_FILE = '.dhopcmd'
+    @@DHOP_STORE = '.dhop'
 
-     # Gives a name to a filesystem path.
-     #
-     # @param name
-     #   The name to assign a path to. This must be only one alpha-numeric word;
-     #   no whitespace or special characters are allowed. Additionally, the name
-     #   should not be any of the following:
-     #
-     #   * set, go, forget, mark, recall, push, pop, help
-     #
-     #   When run from the command-line, you can simply type `dhop docs` to go
-     #   to the location with the name 'docs'. If your name conflicts with a known
-     #   command, however, you'll need to add the `go` command to your
-     #   command-line, such as:
-     #
-     #       $ dhop go mark
-     #
-     #   This command will go to the location stored with the name 'mark', and not
-     #   to the location stored by the `mark` command. Because much confusion can
-     #   arise from this, it's recommended to simply not use any of the names used
-     #   by the commands.
-     #
-     # @param path
-     #   The path to assign to the name. If no path is given, the current
-     #   directory is assumed.
-     #
-     def set(name, path = nil)
+    #
+    # ** DHOP COMMANDS **
+    #
+    # The user can type the names of these methods on the dhop command-line. Arguments typed on the command-line will
+    # be passed as arguments to the method. See the `run` method for details.
+    #
 
-       if path == nil || path == ""
+    # Gives a name to a filesystem path.
+    #
+    # @param name
+    #   The name to assign a path to. This must be only one alpha-numeric word;
+    #   no whitespace or special characters are allowed. Additionally, the name
+    #   should not be any of the following:
+    #
+    #   * set, go, forget, mark, recall, push, pop, help
+    #
+    #   When run from the command-line, you can simply type `dhop docs` to go
+    #   to the location with the name 'docs'. If your name conflicts with a known
+    #   command, however, you'll need to add the `go` command to your
+    #   command-line, such as:
+    #
+    #       $ dhop go mark
+    #
+    #   This command will go to the location stored with the name 'mark', and not
+    #   to the location stored by the `mark` command. Because much confusion can
+    #   arise from this, it's recommended to simply not use any of the names used
+    #   by the commands.
+    #
+    # @param path
+    #   The path to assign to the name. If no path is given, the current
+    #   directory is assumed.
+    #
+    def set(name, path = nil)
+
+      if path == nil || path == ""
+        path = Dir.pwd
+      end
+
+      if Dir.exists?(path)
+        @store[:locations][name.to_sym] = File.expand_path(path) # store full paths
+      else
+        raise "Invalid location: #{path}"
+      end
+    end
+
+    # Goes to the location represented by the name.
+    #
+    # @param name
+    #   The name of the stored location to go to.  If there is no such name, then
+    #   an error will be generated.
+    #
+    def go(name)
+      dir = @store[:locations][name.to_sym]
+      if(dir != nil)
+        write_cmd_path(dir)
+      else
+        raise "No such stored location: #{name}"
+      end
+    end
+
+    # Writes the path to the `@cmd_path_file`, which can be used by the wrapper
+    # script to actually change the directory.
+    #
+    # @param cmd_path
+    #   The path to chdir to after execution of this script has completed.
+    #
+    def write_cmd_path(cmd_path)
+      file = ""
+      if @host_os == :windows
+        # basically, we're creating a temp batch file. This is because we need
+        # to use multiple steps to get to any location on a different volume.
+        file = File.open("#{@cmd_path_file}.bat", 'w')
+        parts = cmd_path.split(':')
+        file.puts "#{parts[0]}:"
+        file.puts "cd #{parts[1]}"
+      else
+        # on other OSes, we merely write the path, as 'cd' will do the job just fine.
+        file = File.open(@cmd_path_file, 'w')
+        file.puts cmd_path
+      end
+      file.close
+    end
+
+    # Forget the named location. This removes the location from the saved list of
+    # known locations. If there is no such location, then nothing occurs.
+    #
+    # @param name
+    #   The name of the location to forget.
+    #
+    def forget(name)
+      if(@store[:locations][name.to_sym] != nil)
+        @store[:locations].delete(name.to_sym)
+      end
+    end
+
+    # Mark a directory so that you can return to it with the {#recall} method. If
+    # a previous mark exists, it is overwritten.
+    #
+    # @param path
+    #   The path to mark. If this is empty, the current directory is assumed.
+    #
+    def mark(path = nil)
+
+      if path == nil || path == ""
          path = Dir.pwd
-       end
+      end
 
-       if Dir.exists?(path)
-         @store[:locations][name.to_sym] = File.expand_path(path) # store full paths
-       else
-         raise "Invalid location: #{path}"
-       end
-     end
+      if Dir.exists?(path)
+        @store[:mark] = File.expand_path(path)
+      else
+        raise "Invalid location: #{path}"
+      end
+    end
 
-     # Goes to the location represented by the name.
-     #
-     # @param name
-     #   The name of the stored location to go to.  If there is no such name, then
-     #   an error will be generated.
-     #
-     def go(name)
-       dir = @store[:locations][name.to_sym]
-       if(dir != nil)
-         write_cmd_path(dir)
-       else
-         raise "No such stored location: #{name}"
-       end
-     end
+    # Goes to the location that was previously marked by the {#mark} method.
+    #
+    def recall
+      if @store[:mark] != nil
+        path = @store[:mark]
+        if Dir.exists?(path)
+          write_cmd_path(path)
+        else
+          raise "A location is stored in :mark, but it is currently invalid: #{path}"
+        end
+      else
+        raise "Nothing is currently stored in :mark. You must mark a path before you can recall it!"
+      end
+    end
 
-     # Writes the path to the DHOP_CMD_FILE, which can be used by the wrapper
-     # script to actually change the directory.
-     #
-     # @param cmd_path
-     #   The path to chdir to after execution of this script has completed.
-     #
-     def write_cmd_path(cmd_path)
-       file = File.open(@cmd_path_file, 'w')
-       file.puts cmd_path
-       file.close
-     end
+    # Pushes a path onto the persistent path stack.
+    #
+    # @param path
+    #   The path to push. if no value is supplied, the current directory is assumed. You can also substitute a named
+    #   location by prepending the value with the `@` symbol.
+    #
+    # @example Calling push to go to the directory `documents`.
+    #   dhop push documents
+    #
+    # @example Calling push to go to the stored location `documents`.
+    #   dhop push @documents
+    #
+    def push(path = nil)
+      if path == nil || path == ""
+        path = Dir.pwd
+      end
 
-     # Forget the named location. This removes the location from the saved list of
-     # known locations. If there is no such location, then nothing occurs.
-     #
-     # @param name
-     #   The name of the location to forget.
-     #
-     def forget(name)
-       if(@store[:locations][name.to_sym] != nil)
-         @store[:locations].delete(name.to_sym)
-       end
-     end
+      @store[:stack].push(Dir.pwd)
 
-     # Mark a directory so that you can return to it with the {#recall} method. If
-     # a previous mark exists, it is overwritten.
-     #
-     # @param path
-     #   The path to mark. If this is empty, the current directory is assumed.
-     #
-     def mark(path = nil)
+      if path[0] == '@'
+        # chop off the `@` and go.
+        go(path[1..-1])
+        return
+      end
 
-       if path == nil || path == ""
-          path = Dir.pwd
-       end
+      if Dir.exists?(path)
+        write_cmd_path(path)
+      else
+        # Special bonus feature. If the path is not recognized, but matches a known location, go to that location
+        # instead. Since we pushed the current directory anyway, if this isn't what we want we can always get back by
+        # popping.
+        dir = @store[:locations][path.to_sym]
+        if(dir.nil?)
+          raise "Invalid location: #{path}"
+        else
+          go(path)
+        end
+      end
+    end
 
-       if Dir.exists?(path)
-         @store[:mark] = File.expand_path(path)
-       else
-         raise "Invalid location: #{path}"
-       end
-     end
+    # Pops the last {#push}ed path from the persistent path stack.
+    #
+    # @param mod
+    #   A modifier for the pop method. The following modifiers can be used:
+    #
+    #   * 'all' - pops all entries from teh persistent path stack, and changes to the final entry.
+    #
+    def pop(mod = nil)
+      if mod == 'all'
+        path = @store[:stack].last
+        @store[:stack] = []
+        return
+      elsif mod != nil
+        raise "Unknown option for pop: #{mod}"
+        return
+      end
 
-     # Goes to the location that was previously marked by the {#mark} method.
-     #
-     def recall
-       if @store[:mark] != nil
-         path = @store[:mark]
-         if Dir.exists?(path)
-           write_cmd_path(path)
-         else
-           raise "A location is stored in :mark, but it is currently invalid: #{path}"
-         end
-       else
-         raise "Nothing is currently stored in :mark. You must mark a path before you can recall it!"
-       end
-     end
+      if @store[:stack] != nil && @store[:stack].length > 0
+        path = @store[:stack].pop
+        if Dir.exists?(path)
+          write_cmd_path(path)
+        else
+          raise "A location was popped, but it is currently invalid: #{path}"
+        end
+      else
+        raise "Nothing currently stored in the location stack. You must push a path before you can pop."
+      end
+    end
 
-     # Pushes a path onto the persistent path stack.
-     #
-     # @param path
-     #   The path to push. if no value is supplied, the current directory is assumed.
-     def push(path = nil)
-       if path == nil || path == ""
-          path = Dir.pwd
-       end
+    # Lists the contents of the current store in a pleasant way (as opposed to {#dump}).
+    #
+    # @param (String) key
+    #   The key used to limit the results ('locations', 'stack', or 'mark').
+    #
+    def list(key = nil)
+      puts ""
+      @store.each do | section |
+        # show the section title.
+        title = "#{section[0]}".capitalize
 
-       @store[:stack].push(Dir.pwd)
+        # if there's no data for the section, skip ahead to the next section.
+        if section[1].nil? || section[1] == [] || section[1] == {} || section[1] == ''
+          next
+        end
 
-       if Dir.exists?(path)
-         write_cmd_path(path)
-       else
-         raise "Invalid location: #{path}"
-       end
-     end
+        # the output depends on the type of section it is.
+        case title
+          when 'Locations'
+            puts title
+            puts title.gsub(/./, '=')
+            section[1].sort.each do | subsection |
+              puts "#{subsection[0]}: #{subsection[1]}"
+            end
+          when 'Stack'
+            puts title
+            puts title.gsub(/./, '=')
+            stack_pos = 1
+            section[1].reverse.each do | subsection |
+              puts "#{stack_pos}. #{subsection}"
+              stack_pos += 1
+            end
+          when 'Mark'
+            puts "#{title}: #{section[1]}"
+        end
+        puts ""
+      end
+    end
 
-     # Pops the last {#push}ed path from the persistent path stack.
-     #
-     # @param mod
-     #   A modifier for the pop method. The following modifiers can be used:
-     #
-     #   * 'all' - pops all entries from teh persistent path stack, and changes to the final entry.
-     #
-     def pop(mod = nil)
-       if mod == 'all'
-         path = @store[:stack].last
-         @store[:stack] = []
-         return
-       elsif mod != nil
-         raise "Unknown option for pop: #{mod}"
-         return
-       end
+    # Prints some help.
+    def help
+      line_count = 0
+      DATA.each_line do | line |
+        puts line
+        line_count += 1
+        if line_count > 24
+          print '[Press \'return\' to continue...]'
+          x = gets
+          line_count = 0
+        end
+      end
+    end
 
-       if @store[:stack] != nil && @store[:stack].length > 0
-         path = @store[:stack].pop
-         if Dir.exists?(path)
-           write_cmd_path(path)
-         else
-           raise "A location was popped, but it is currently invalid: #{path}"
-         end
-       else
-         raise "Nothing currently stored in the location stack. You must push a path before you can pop."
-       end
-     end
+    #
+    # ** NON-COMMANDS **
+    #
+    # These are used by dhop itself, and not by the user.
+    #
 
-     # Prints some help.
-     def help
-       line_count = 0
-       DATA.each_line do | line |
-         puts line
-         line_count += 1
-         if line_count > 24
-           print '<Press \'return\' to continue...>'
-           x = gets
-           line_count = 0
-         end
-       end
-     end
+    # Creates a new instance of the Dhop class, with an empty store.
+    #
+    def initialize
+      @host_os = find_host_os
+      @cmd_path_file = "#{Dir.home}/#{@@DHOP_CMD_FILE}"
+      @store_path = "#{Dir.home}/#{@@DHOP_STORE}"
 
-     # Creates a new instance of the DirHop class, with an empty store.
-     #
-     def initialize
-       @cmd_path_file = "#{Dir.home}/#{@@DHOP_CMD_FILE}"
-       @store_path = "#{Dir.home}/#{@@DHOP_STORE}"
+      # remove the existing cmd_path_file if it exists. It should only be there
+      # if we need to change the command path upon exit.
+      if File.exists?(@cmd_path_file)
+        File.delete(@cmd_path_file)
+      end
 
-       # remove the existing cmd_path_file if it exists. It should only be there
-       # if we need to change the command path upon exit.
-       if File.exists?(@cmd_path_file)
-         File.delete(@cmd_path_file)
-       end
-
-       # Setup the default store (empty)
-       @store = { :locations => {}, :stack => [], :mark => nil }
-       # If there's information in the store, load it.
-       if File.exists?(@store_path)
-         read_store
-       end
-     end
+      # Setup the default store (empty)
+      @store = { :locations => {}, :stack => [], :mark => nil }
+      # If there's information in the store, load it.
+      if File.exists?(@store_path)
+        read_store
+      end
+    end
 
     # Reads options from the file store.
     def read_store
-      if File.exists?(@store_path)
-        @store = Marshal::load(File.read(@store_path))
-      end
+      @store = Marshal::load(File.read(@store_path))
     end
 
     # Writes options to the file store.
@@ -226,10 +312,10 @@ module Abstrys
       exit
     end
 
-    # Dumps the current values of everything in @store.
+    # Dumps the current store in yaml
     # @!visibility private
     def dump
-      puts @store
+      puts @store.to_yaml
     end
 
     # Runs the command-line interface.
@@ -243,11 +329,18 @@ module Abstrys
       case cmd
       when 'help', 'recall', 'dump'
         self.send(cmd.to_sym)
-      when 'set', 'go', 'forget', 'mark', 'push', 'pop'
+      when 'set', 'go', 'forget', 'mark', 'push', 'pop', 'list'
         self.send(cmd.to_sym, *ARGV)
       else
-        if @store[:locations][cmd.to_sym] != nil
+        if cmd[0] == '@'
+          # if the command is preceded by an '@' symbol, it's assumed to be a location.
+          go(cmd[1..-1])
+        elsif @store[:locations][cmd.to_sym] != nil
           go(cmd)
+        elsif Dir.exists?(cmd)
+          # Another bit of convenience. If the command isn't recognized, but matches a valid directory path, assume that
+          # the user wanted to go there.
+          write_cmd_path(cmd)
         else
           raise "Unknown command: #{cmd}"
         end
@@ -260,17 +353,31 @@ module Abstrys
         puts "Error: #{e.message}"
       end
     end
+
+    # Finds the host operating system.
+    #
+    # @return [:windows,:linux,:macosx]
+    #   The detected host OS.
+    #
+    def find_host_os
+      host = RbConfig::CONFIG['host_os'].downcase
+      if host =~ /^mingw.*|^win.*/
+        return :windows
+      else
+        return :linux
+      end
+    end
   end
 end
 
-Abstrys::DirHop.new.run
+Abstrys::Dhop.new.run
 
 __END__
 
 Dhop - it takes you places!
 ===========================
 
-DirHop (command name: dhop) is a command-line utility written in Ruby
+Dhop (command name: dhop) is a command-line utility written in Ruby
 that provides a number of ways to get around your filesystem quickly:
 
 -   marking and recalling a single, unnamed location.

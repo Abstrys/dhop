@@ -20,7 +20,7 @@ fi
 echo
 echo Copying files:
 cp -v dhop.rb $PATH_TO_INSTALL
-cp -v dhop.sh $PATH_TO_INSTALL/dhop
+cp -v dhop.sh $PATH_TO_INSTALL
 
 echo
 echo Be sure to add the following line to your .profile, .bashrc, or .bash_profile:

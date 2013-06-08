@@ -138,9 +138,7 @@ will take you to your home directory--well, on *nix, *BSD, and Mac OS X, at leas
 
         git clone https://github.com/Abstrys/dhop.git
 
-    or download the .zip:
-
-    * <https://github.com/Abstrys/dhop/archive/master.zip>
+    or download the .zip: <https://github.com/Abstrys/dhop/archive/master.zip>
 
 3. Run either `install.sh` or `install.bat` depending on your platform.
 

@@ -5,11 +5,12 @@ module Abstrys
   #
   # Copyright (C) 2013, Abstrys / Eron Hennessey
   #
-  # This file is released under the terms of the GNU General Public License, v3.
-  # For details about this license, see LICENSE.txt or go to
-  # http://www.gnu.org/licenses/gpl.html
+	# This file is released under the terms of the GNU General Public License, v3.
+	# For details about this license, see LICENSE.txt or go to
+	# <http://www.gnu.org/licenses/gpl.html>
   #
-  # Full documentation is in this file (run yard doc to generate it) and in README.md
+	# Full documentation is in this file (run yard doc to generate it) and in
+	# README.md
   #
   class Dhop
 
@@ -19,8 +20,9 @@ module Abstrys
     #
     # ** DHOP COMMANDS **
     #
-    # The user can type the names of these methods on the dhop command-line. Arguments typed on the command-line will
-    # be passed as arguments to the method. See the `run` method for details.
+		# The user can type the names of these methods on the dhop command-line.
+		# Arguments typed on the command-line will be passed as arguments to the
+		# method. See the `run` method for details.
     #
 
     # Gives a name to a filesystem path.
@@ -84,18 +86,17 @@ module Abstrys
     #
     def write_cmd_path(cmd_path)
       file = ""
-      if @host_os == :windows
-        # basically, we're creating a temp batch file. This is because we need
-        # to use multiple steps to get to any location on a different volume.
-        file = File.open("#{@cmd_path_file}.bat", 'w')
-        parts = cmd_path.split(':')
-        file.puts "#{parts[0]}:"
-        file.puts "cd #{parts[1]}"
-      else
-        # on other OSes, we merely write the path, as 'cd' will do the job just fine.
-        file = File.open(@cmd_path_file, 'w')
-        file.puts cmd_path
-      end
+			# make sure the path is expanded
+			cmd_path = File::expand_path(cmd_path)
+
+			# we need to do something slightly different on Windows.
+			if @host_os == :windows
+				file = File.open("#{@cmd_path_file}.bat", 'w')
+				file.print "cd /d #{cmd_path}"
+		  else
+				file = File.open(@cmd_path_file, 'w')
+				file.print cmd_path
+			end
       file.close
     end
 
@@ -277,8 +278,17 @@ module Abstrys
     #
     def initialize
       @host_os = find_host_os
-      @cmd_path_file = "#{Dir.home}/#{@@DHOP_CMD_FILE}"
-      @store_path = "#{Dir.home}/#{@@DHOP_STORE}"
+			if @host_os == :windows
+				home = Dir.home
+				if(home[0] == '"') # sometimes, this might have quotes around it.
+					home = home[1..-2]
+				end
+				@cmd_path_file = "#{home}/#{@@DHOP_CMD_FILE}"
+				@store_path = "#{home}/#{@@DHOP_STORE}"
+			else
+				@cmd_path_file = "#{Dir.home}/#{@@DHOP_CMD_FILE}"
+				@store_path = "#{Dir.home}/#{@@DHOP_STORE}"
+			end
 
       # remove the existing cmd_path_file if it exists. It should only be there
       # if we need to change the command path upon exit.
@@ -333,13 +343,15 @@ module Abstrys
         self.send(cmd.to_sym, *ARGV)
       else
         if cmd[0] == '@'
-          # if the command is preceded by an '@' symbol, it's assumed to be a location.
+					# if the command is preceded by an '@' symbol, it's assumed to be a
+					# location.
           go(cmd[1..-1])
         elsif @store[:locations][cmd.to_sym] != nil
           go(cmd)
         elsif Dir.exists?(cmd)
-          # Another bit of convenience. If the command isn't recognized, but matches a valid directory path, assume that
-          # the user wanted to go there.
+					# Another bit of convenience. If the command isn't recognized, but
+					# matches a valid directory path, assume that the user wanted to go
+					# there.
           write_cmd_path(cmd)
         else
           raise "Unknown command: #{cmd}"

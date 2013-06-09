@@ -142,7 +142,14 @@ will take you to your home directory--well, on *nix, *BSD, and Mac OS X, at leas
 
 3. Run either `install.sh` or `install.bat` depending on your platform.
 
-4. Test it out by typing `dhop help`
+4. If you used `install.sh`, you'll also need to add a line to your profile (either `~/.bashrc`, `~/.bash_profile`, or
+    `~/.profile` depending on your system), such as:
+
+        alias dhop="source /Users/eronh/bin/dhop.sh"
+
+    Invoking `dhop` with `source` is necessary to allow `dhop` to change your working directory in your shell session.
+
+5. Once installed, test it out by typing `dhop help`.
 
 ## Problems?
 

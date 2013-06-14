@@ -10,16 +10,8 @@ filesystem quickly:
 * pushing and popping locations from a stack.
 * naming directory locations and then recalling them by name.
 
-All of these states are persistent and can be used even after your terminal session has finished, your computer
+Each of these states is *persistent* and can be used even after your terminal session has finished, your computer
 rebooted, etc.
-
-## License
-
-This software is provided under the terms of the GNU General Public License, v3. For complete info, refer to LICENSE.txt
-(provided with the source code), or go to <http://www.gnu.org/licenses/gpl.html>.
-
-> **Note**: The license does not restrict your ability to use the software itself; it affects only your ability to
-> modify and use the software's *code*, or to claim ownership of it.
 
 ## Usage
 
@@ -150,6 +142,14 @@ will take you to your home directory--well, on *nix, *BSD, and Mac OS X, at leas
     Invoking `dhop` with `source` is necessary to allow `dhop` to change your working directory in your shell session.
 
 5. Once installed, test it out by typing `dhop help`.
+
+## License
+
+This software is provided under the terms of the GNU General Public License, v3. For complete info, refer to LICENSE.txt
+(provided with the source code), or go to <http://www.gnu.org/licenses/gpl.html>.
+
+> **Note**: The license does not restrict your ability to use the software itself; it affects only your ability to
+> modify and use the software's *code*, or to claim ownership of it.
 
 ## Problems?
 

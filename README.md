@@ -1,53 +1,53 @@
 # Dhop - it takes you places!
 
-\[ [License](#license) | [Usage](#usage) | [Examples](#examples) | [Conveniences](#special-conveniences)
-| [Installing](#installing) | [Problems?](#problems) \]
+[ [License](#license) | [Usage](#usage) | [Examples](#examples) | [Conveniences](#special-conveniences)
+| [Installing](#installing) | [Problems?](#problems) ]
 
 Dhop (command name: `dhop`) is a command-line utility written in Ruby that provides a number of ways to get around your
 filesystem quickly:
 
-* marking and recalling a single, unnamed location.
-* pushing and popping locations from a stack.
-* naming directory locations and then recalling them by name.
+* **set** named directory locations and then **go** to them by name.
+
+* **push** and **pop** locations from a stack.
+
+* **marking** and **recalling** a single, unnamed location.
 
 Each of these states is *persistent* and can be used even after your terminal session has finished, your computer
 rebooted, etc.
 
 ## Usage
 
-**dhop** \<*cmd_or_location_or_path*\> \[*command_args*\]
+**dhop** <*cmd_or_location_or_path*> [*command_args*]
 
 Where *cmd_or_location* represents either a named location (recorded with **set**) or one of the [known
 commands](#dhop-commands). Any further arguments on the command-line are considered parameters for the given command.
 
 ### Commands
 
-**set** \<*name*\> \[*path*\]
-:    Sets a name for a given directory path. If no path is given, then the current directory is assumed.
+**set** <*name*> [*path*]
+:    Sets a name for a specified directory path. If no path is provided, then the name is set for the current directory.
 
-**go** \<*name*\>
-:    Goes to the location previously **set**, and represented by *name*.
+**go** <*name*>
+:    Goes to the location previously **set**, represented by *name*.
 
-**forget** \<*name*\>
+**forget** <*name*>
 :    Forgets (deletes) a named location that was previously **set**.
 
-**mark** \[*path*\]
+**mark** [*path*]
 :    Marks the provided path so you can later **recall** it to return. If the location isn't provided, the current
-    directory is assumed.
-
-> **Note**: This also overwrites any previous marks.
+    directory is assumed. *This also overwrites any previous marks.*
 
 **recall**
 :    Goes to the directory that was last **mark**ed.
 
-**push** \<*path*\>
+**push** <*path*>
 :    Pushes the current working directory to the directory stack, then goes to the location referenced by *path*.
 
-**pop** \[*option*\]
+**pop** [*option*]
 :    Pops the last pushed location from the stack, and then transports you to that location.  You can set the following option:
 
-    * **all** - Pops all of the pushed locations from the stack, then transports you to the final location popped from
-      the stack.
+  * **all** - Pops all of the pushed locations from the stack, then transports you to the final location popped from
+    the stack.
 
 **help**
 :    Prints help.
@@ -56,35 +56,49 @@ commands](#dhop-commands). Any further arguments on the command-line are conside
 
 ### Example 1: Setting and returning to a named location
 
-    $ dhop set docs ~/Documents
+~~~~sh
+dhop set docs ~/Documents
+~~~~
 
 Then you can either use:
 
-    $ dhop docs
+~~~~sh
+dhop docs
+~~~~
 
 or
 
-    $ dhop go docs
+~~~~sh
+dhop go docs
+~~~~
 
 to go to ~/Documents.
 
 ### Example 2: Marking and recalling a location
 
-    $ dhop mark
+~~~~sh
+dhop mark
+~~~~
 
 marks the current directory (overwriting any previous `mark`)
 
-    $ dhop recall
+~~~~sh
+dhop recall
+~~~~
 
 takes you back to the marked location.
 
 ### Example 3: Pushing and popping locations
 
-    $ dhop push
+~~~~sh
+dhop push
+~~~~
 
 pushes the current directory on the stack.
 
-    $ dhop pop
+~~~~sh
+dhop pop
+~~~~
 
 pops the last pushed directory from the stack and transports you there.
 
@@ -96,13 +110,17 @@ I've added these special conveniences because I use them.  ;)
 
 If you enter an `@` symbol at the beginning of a command, it assumes you mean `go`. So you can type:
 
-    $ dhop @docs
+~~~~sh
+dhop @docs
+~~~~
 
 This will take you to the named location 'docs'.
 
 You can also use `@` with `push`:
 
-    $ dhop push @docs
+~~~~sh
+dhop push @docs
+~~~~
 
 Which will take you to the location `docs`, but will first push the current directory onto the stack.
 
@@ -111,20 +129,22 @@ Which will take you to the location `docs`, but will first push the current dire
 If the command isn't recognized, but refers to an actual filesystem location, `dhop` will assume that you want to go
 there, so typing:
 
-    $ dhop ~
+~~~~sh
+dhop ~
+~~~~
 
 will take you to your home directory--well, on *nix, *BSD, and Mac OS X, at least.
 
 > **Note**: If you use `dhop` on Windows, you may want to go to where your "home" is and type:
 >
->     C:\Users\me> dhop set ~
+>     dhop set ~
 >
 > then, just as you would on Linux, you can use `dhop ~` to get home. Neat, eh?
 
 
 ## Installing
 
-1. You must have Ruby on your system. I've tested this with Ruby 1.9+.
+1. You must have [Ruby][] on your system. I've tested this with Ruby 1.9+.
 
 2. Get the sources. You can either use git:
 
@@ -160,4 +180,6 @@ Well, given that--there are avenues available to alert me of any problems with `
 
 * You can log an issue on GitHub: <https://github.com/Abstrys/dhop/issues>
 * You can email me at: <eron@abstrys.com>
+
+[ruby]: http://www.ruby-lang.org/
 

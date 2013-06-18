@@ -1,7 +1,7 @@
 # Dhop - it takes you places!
 
-[ [License](#license) | [Usage](#usage) | [Examples](#examples) | [Conveniences](#special-conveniences)
-| [Installing](#installing) | [Problems?](#problems) ]
+[ [Usage](#usage) | [Examples](#examples) | [Conveniences](#special-conveniences)
+| [Installing](#installing) | [License](#license) | [Problems?](#problems) ]
 
 Dhop (command name: `dhop`) is a command-line utility written in Ruby that provides a number of ways to get around your
 filesystem quickly:
@@ -17,33 +17,33 @@ rebooted, etc.
 
 ## Usage
 
-**dhop** <*cmd_or_location_or_path*> [*command_args*]
+**dhop** \<*cmd_or_location_or_path*\> \[*command_args*\]
 
 Where *cmd_or_location* represents either a named location (recorded with **set**) or one of the [known
 commands](#dhop-commands). Any further arguments on the command-line are considered parameters for the given command.
 
 ### Commands
 
-**set** <*name*> [*path*]
+**set** \<*name*\> \[*path*\]
 :    Sets a name for a specified directory path. If no path is provided, then the name is set for the current directory.
 
-**go** <*name*>
+**go** \<*name*\>
 :    Goes to the location previously **set**, represented by *name*.
 
-**forget** <*name*>
+**forget** \<*name*\>
 :    Forgets (deletes) a named location that was previously **set**.
 
-**mark** [*path*]
+**mark** \[*path*\]
 :    Marks the provided path so you can later **recall** it to return. If the location isn't provided, the current
     directory is assumed. *This also overwrites any previous marks.*
 
 **recall**
 :    Goes to the directory that was last **mark**ed.
 
-**push** <*path*>
+**push** \<*path*\>
 :    Pushes the current working directory to the directory stack, then goes to the location referenced by *path*.
 
-**pop** [*option*]
+**pop** \[*option*\]
 :    Pops the last pushed location from the stack, and then transports you to that location.  You can set the following option:
 
   * **all** - Pops all of the pushed locations from the stack, then transports you to the final location popped from

@@ -152,9 +152,28 @@ will take you to your home directory--well, on *nix, *BSD, and Mac OS X, at leas
 
     or download the .zip: <https://github.com/Abstrys/dhop/archive/master.zip>
 
-3. Run either `install.sh` or `install.bat` depending on your platform.
+3. Run either `install.sh` or `install.bat` depending on your platform. Here's
+    an example run using `install.sh` on Mac OS X:
 
-4. If you used `install.sh`, you'll also need to add a line to your profile (either `~/.bashrc`, `~/.bash_profile`, or
+        ./install.sh
+        Installing dhop.rb...
+
+        Install directory already exists: /Users/eronh/bin
+
+        Copying files:
+        dhop.rb -> /Users/eronh/bin/dhop.rb
+        dhop.sh -> /Users/eronh/bin/dhop.sh
+
+        Be sure to add the following line to your .profile, .bashrc, or .bash_profile:
+
+        alias dhop="source /Users/eronh/bin/dhop.sh"
+
+        Feel free to cut-and-paste the above line, since it refers to the actual
+        install location. Then, you can simply type 'dhop' on the command-line
+        for help.
+
+4. If you used `install.sh` (Linux, Mac, BSD, etc.), you'll also need to add
+    a line to your profile (either `~/.bashrc`, `~/.bash_profile`, or
     `~/.profile` depending on your system), such as:
 
         alias dhop="source /Users/eronh/bin/dhop.sh"

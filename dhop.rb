@@ -26,7 +26,6 @@ module Abstrys
     # Arguments typed on the command-line will be passed as arguments to the
     # method. See the `run` method for details.
     #
-
     # Gives a name to a filesystem path.
     #
     # @param name
@@ -82,6 +81,10 @@ module Abstrys
 
     # Copies a file from the given path to a named location.
     def cp(path, name)
+      if name[0] == '@'
+        # chop off the `@` and use this as the name
+        name = (name[1..-1])
+      end
       dir = @store[:locations][name.to_sym]
       if !File.exists?(path)
         raise "#{path} is not a valid file!"
@@ -99,6 +102,10 @@ module Abstrys
 
     # Copies a file from the given path to a named location.
     def mv(path, name)
+      if name[0] == '@'
+        # chop off the `@` and use this as the name
+        name = (name[1..-1])
+      end
       dir = @store[:locations][name.to_sym]
       if !File.exists?(path)
         raise "#{path} is not a valid file!"

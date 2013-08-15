@@ -24,6 +24,15 @@ commands](#dhop-commands). Any further arguments on the command-line are conside
 
 ### Commands
 
+**cp** \<*from*\>, \<*to*\>
+:    Copies the file specified by *from* to the location specified by *to*. If *to* represents a directory, then the file
+    is copied to the directory, retaining its name. Otherwise, the file is renamed to the name specified in *to*.
+
+**mv** \<*from*\>, \<*to*\>
+:    Moves the file specified by *from* to the location specified by *to*. If *to* represents a directory, then the file
+    is moved to the directory, retaining its name. Otherwise, the file is renamed to the name specified in *to*. In
+    either case, the file will no longer be present in the location specified by *from*.
+
 **set** \<*name*\> \[*path*\]
 :    Sets a name for a specified directory path. If no path is provided, then the name is set for the current directory.
 
@@ -44,7 +53,8 @@ commands](#dhop-commands). Any further arguments on the command-line are conside
 :    Pushes the current working directory to the directory stack, then goes to the location referenced by *path*.
 
 **pop** \[*option*\]
-:    Pops the last pushed location from the stack, and then transports you to that location.  You can set the following option:
+:    Pops the last pushed location from the stack, and then transports you to that location.  You can set the following
+    option:
 
   * **all** - Pops all of the pushed locations from the stack, then transports you to the final location popped from
     the stack.

@@ -1,16 +1,18 @@
 require 'yaml' # only needed by the dump method
 require 'rbconfig' # to find the host OS.
+require 'fileutils' # for `cp` and `mv`.
+
 module Abstrys
   # A command-line utility for hopping around the filesystem.
   #
   # Copyright (C) 2013, Abstrys / Eron Hennessey
   #
-	# This file is released under the terms of the GNU General Public License, v3.
-	# For details about this license, see LICENSE.txt or go to
-	# <http://www.gnu.org/licenses/gpl.html>
+  # This file is released under the terms of the GNU General Public License, v3.
+  # For details about this license, see LICENSE.txt or go to
+  # <http://www.gnu.org/licenses/gpl.html>
   #
-	# Full documentation is in this file (run yard doc to generate it) and in
-	# README.md
+  # Full documentation is in this file (run yard doc to generate it) and in
+  # README.md
   #
   class Dhop
 
@@ -20,9 +22,9 @@ module Abstrys
     #
     # ** DHOP COMMANDS **
     #
-		# The user can type the names of these methods on the dhop command-line.
-		# Arguments typed on the command-line will be passed as arguments to the
-		# method. See the `run` method for details.
+    # The user can type the names of these methods on the dhop command-line.
+    # Arguments typed on the command-line will be passed as arguments to the
+    # method. See the `run` method for details.
     #
 
     # Gives a name to a filesystem path.
@@ -78,6 +80,40 @@ module Abstrys
       end
     end
 
+    # Copies a file from the given path to a named location.
+    def cp(path, name)
+      dir = @store[:locations][name.to_sym]
+      if !File.exists?(path)
+        raise "#{path} is not a valid file!"
+      end
+      if(dir == nil)
+        # assume that *name* is actually a path.
+        if Dir.exists?(name)
+          dir = name
+        else
+          raise "#{name} does not refer to a stored location or path."
+        end
+      end
+      FileUtils.cp_r(path, dir)
+    end
+
+    # Copies a file from the given path to a named location.
+    def mv(path, name)
+      dir = @store[:locations][name.to_sym]
+      if !File.exists?(path)
+        raise "#{path} is not a valid file!"
+      end
+      if(dir == nil)
+        # assume that *name* is actually a path.
+        if Dir.exists?(name)
+          dir = name
+        else
+          raise "#{name} does not refer to a stored location or path."
+        end
+      end
+      FileUtils.mv(path, dir)
+    end
+
     # Writes the path to the `@cmd_path_file`, which can be used by the wrapper
     # script to actually change the directory.
     #
@@ -86,22 +122,22 @@ module Abstrys
     #
     def write_cmd_path(cmd_path)
       file = ""
-			# make sure the path is expanded
-			cmd_path = File::expand_path(cmd_path)
+            # make sure the path is expanded
+            cmd_path = File::expand_path(cmd_path)
 
-			# we need to do something slightly different on Windows.
-			if @host_os == :windows
-				file = File.open("#{@cmd_path_file}.bat", 'w')
-				file.print "cd /d #{cmd_path}"
-		  else
-				file = File.open(@cmd_path_file, 'w')
-				file.print cmd_path
-			end
+            # we need to do something slightly different on Windows.
+            if @host_os == :windows
+                file = File.open("#{@cmd_path_file}.bat", 'w')
+                file.print "cd /d #{cmd_path}"
+          else
+                file = File.open(@cmd_path_file, 'w')
+                file.print cmd_path
+            end
       file.close
     end
 
-    # Forget the named location. This removes the location from the saved list of
-    # known locations. If there is no such location, then nothing occurs.
+    # Forget the named location. This removes the location from the saved list
+    # of known locations. If there is no such location, then nothing occurs.
     #
     # @param name
     #   The name of the location to forget.
@@ -112,8 +148,8 @@ module Abstrys
       end
     end
 
-    # Mark a directory so that you can return to it with the {#recall} method. If
-    # a previous mark exists, it is overwritten.
+    # Mark a directory so that you can return to it with the {#recall} method.
+    # If a previous mark exists, it is overwritten.
     #
     # @param path
     #   The path to mark. If this is empty, the current directory is assumed.
@@ -149,8 +185,9 @@ module Abstrys
     # Pushes a path onto the persistent path stack.
     #
     # @param path
-    #   The path to push. if no value is supplied, the current directory is assumed. You can also substitute a named
-    #   location by prepending the value with the `@` symbol.
+    #   The path to push. if no value is supplied, the current directory is
+    #   assumed. You can also substitute a named location by prepending the
+    #   value with the `@` symbol.
     #
     # @example Calling push to go to the directory `documents`.
     #   dhop push documents
@@ -174,9 +211,10 @@ module Abstrys
       if Dir.exists?(path)
         write_cmd_path(path)
       else
-        # Special bonus feature. If the path is not recognized, but matches a known location, go to that location
-        # instead. Since we pushed the current directory anyway, if this isn't what we want we can always get back by
-        # popping.
+        # Special bonus feature. If the path is not recognized, but matches a
+        # known location, go to that location instead. Since we pushed the
+        # current directory anyway, if this isn't what we want we can always get
+        # back by popping.
         dir = @store[:locations][path.to_sym]
         if(dir.nil?)
           raise "Invalid location: #{path}"
@@ -191,7 +229,8 @@ module Abstrys
     # @param mod
     #   A modifier for the pop method. The following modifiers can be used:
     #
-    #   * 'all' - pops all entries from teh persistent path stack, and changes to the final entry.
+    #   * 'all' - pops all entries from teh persistent path stack, and changes
+    #       to the final entry.
     #
     def pop(mod = nil)
       if mod == 'all'
@@ -215,7 +254,8 @@ module Abstrys
       end
     end
 
-    # Lists the contents of the current store in a pleasant way (as opposed to {#dump}).
+    # Lists the contents of the current store in a pleasant way (as opposed to
+    # {#dump}).
     #
     # @param (String) key
     #   The key used to limit the results ('locations', 'stack', or 'mark').
@@ -278,17 +318,17 @@ module Abstrys
     #
     def initialize
       @host_os = find_host_os
-			if @host_os == :windows
-				home = Dir.home
-				if(home[0] == '"') # sometimes, this might have quotes around it.
-					home = home[1..-2]
-				end
-				@cmd_path_file = "#{home}/#{@@DHOP_CMD_FILE}"
-				@store_path = "#{home}/#{@@DHOP_STORE}"
-			else
-				@cmd_path_file = "#{Dir.home}/#{@@DHOP_CMD_FILE}"
-				@store_path = "#{Dir.home}/#{@@DHOP_STORE}"
-			end
+            if @host_os == :windows
+                home = Dir.home
+                if(home[0] == '"') # sometimes, this might have quotes around it.
+                    home = home[1..-2]
+                end
+                @cmd_path_file = "#{home}/#{@@DHOP_CMD_FILE}"
+                @store_path = "#{home}/#{@@DHOP_STORE}"
+            else
+                @cmd_path_file = "#{Dir.home}/#{@@DHOP_CMD_FILE}"
+                @store_path = "#{Dir.home}/#{@@DHOP_STORE}"
+            end
 
       # remove the existing cmd_path_file if it exists. It should only be there
       # if we need to change the command path upon exit.
@@ -339,19 +379,19 @@ module Abstrys
       case cmd
       when 'help', 'recall', 'dump'
         self.send(cmd.to_sym)
-      when 'set', 'go', 'forget', 'mark', 'push', 'pop', 'list'
+      when 'set', 'go', 'forget', 'mark', 'push', 'pop', 'list', 'cp', 'mv'
         self.send(cmd.to_sym, *ARGV)
       else
         if cmd[0] == '@'
-					# if the command is preceded by an '@' symbol, it's assumed to be a
-					# location.
+          # if the command is preceded by an '@' symbol, it's assumed to be a
+          # location.
           go(cmd[1..-1])
         elsif @store[:locations][cmd.to_sym] != nil
           go(cmd)
         elsif Dir.exists?(cmd)
-					# Another bit of convenience. If the command isn't recognized, but
-					# matches a valid directory path, assume that the user wanted to go
-					# there.
+          # Another bit of convenience. If the command isn't recognized, but
+          # matches a valid directory path, assume that the user wanted to go
+          # there.
           write_cmd_path(cmd)
         else
           raise "Unknown command: #{cmd}"
@@ -385,35 +425,27 @@ end
 Abstrys::Dhop.new.run
 
 __END__
-
 Dhop - it takes you places!
 ===========================
 
-Dhop (command name: dhop) is a command-line utility written in Ruby
-that provides a number of ways to get around your filesystem quickly:
+[ Usage | Examples | Conveniences | Installing | License | Problems? ]
+
+Dhop (command name: dhop) is a command-line utility written in Ruby that
+provides a number of ways to get around your filesystem quickly:
+
+-   set named directory locations and then go to them by name.
+
+-   push and pop locations from a stack.
 
 -   marking and recalling a single, unnamed location.
--   pushing and popping locations from a stack.
--   naming directory locations and then recalling them by name.
 
-All of these states are persistent and can be used even after your
+Each of these states is persistent and can be used even after your
 terminal session has finished, your computer rebooted, etc.
-
-License
--------
-
-This software is provided under the terms of the GNU General Public
-License, v3. For complete info, refer to LICENSE.txt (provided with the
-source code), or go to http://www.gnu.org/licenses/gpl.html.
-
-  Note: The license does not restrict your ability to use the software
-  itself; it affects only your ability to modify and use the software's
-  code, or to claim ownership of it.
 
 Usage
 -----
 
-dhop cmd_or_location command_args
+dhop <cmd_or_location_or_path> [command_args]
 
 Where cmd_or_location represents either a named location (recorded with
 set) or one of the known commands. Any further arguments on the
@@ -421,30 +453,42 @@ command-line are considered parameters for the given command.
 
 Commands
 
-set name path
-    Sets a name for a given directory path. If no path is given, then
-    the current directory is assumed.
+cp <from>, <to>
+    Copies the file specified by from to the location specified by to.
+    If to represents a directory, then the file is copied to the
+    directory, retaining its name. Otherwise, the file is renamed to the
+    name specified in to.
 
-go name
-    Goes to the location previously set, and represented by name.
+mv <from>, <to>
+    Moves the file specified by from to the location specified by to. If
+    to represents a directory, then the file is moved to the directory,
+    retaining its name. Otherwise, the file is renamed to the name
+    specified in to. In either case, the file will no longer be present
+    in the location specified by from.
 
-forget name
+set <name> [path]
+    Sets a name for a specified directory path. If no path is provided,
+    then the name is set for the current directory.
+
+go <name>
+    Goes to the location previously set, represented by name.
+
+forget <name>
     Forgets (deletes) a named location that was previously set.
 
-mark path
+mark [path]
     Marks the provided path so you can later recall it to return. If the
-    location isn't provided, the current directory is assumed.
-
-  Note: This also overwrites any previous marks.
+    location isn't provided, the current directory is assumed. This also
+    overwrites any previous marks.
 
 recall
     Goes to the directory that was last marked.
 
-push path
+push <path>
     Pushes the current working directory to the directory stack, then
     goes to the location referenced by path.
 
-pop option
+pop [option]
     Pops the last pushed location from the stack, and then transports
     you to that location. You can set the following option:
 
@@ -459,39 +503,49 @@ Examples
 
 Example 1: Setting and returning to a named location
 
-    $ dhop set docs ~/Documents
+~~~~ {.sh}
+dhop set docs ~/Documents
+~~~~
 
 Then you can either use:
 
-    $ dhop docs
+~~~~ {.sh}
+dhop docs
+~~~~
 
 or
 
-    $ dhop go docs
+~~~~ {.sh}
+dhop go docs
+~~~~
 
 to go to ~/Documents.
 
 Example 2: Marking and recalling a location
 
-    $ dhop mark
+~~~~ {.sh}
+dhop mark
+~~~~
 
 marks the current directory (overwriting any previous mark)
 
-    $ dhop recall
+~~~~ {.sh}
+dhop recall
+~~~~
 
 takes you back to the marked location.
 
 Example 3: Pushing and popping locations
 
-    $ dhop push
+~~~~ {.sh}
+dhop push
+~~~~
 
 pushes the current directory on the stack.
 
-    $ dhop pop
+~~~~ {.sh}
+dhop pop
+~~~~
 
 pops the last pushed directory from the stack and transports you there.
-
-* * * * *
-
-Copyright © 2013, Abstrys / Eron Hennessey
 

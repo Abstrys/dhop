@@ -19,8 +19,7 @@ arguments) is mostly what you get when you run [pandoc][] with the following opt
 If you make changes to the code that affect its interface or usage, make changes to `README.md`, and then use the
 preceding command to generate the `__END__` block text.
 
-After pasting the `__END__` block test, snip out the information about installing dhop. Obviously, if they have the
-program running they've installed it. :P
+After pasting the `__END__` block test, snip out all the information after the list of commands.
 
 ## The `dhop.sh` and `dhop.bat` files
 

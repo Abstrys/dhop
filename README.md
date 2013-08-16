@@ -15,6 +15,8 @@ filesystem quickly:
 Each of these states is *persistent* and can be used even after your terminal session has finished, your computer
 rebooted, etc.
 
+You can also copy and move files to any location you've named with *set*.
+
 ## Usage
 
 **dhop** \<*cmd_or_location_or_path*\> \[*command_args*\]
@@ -25,13 +27,14 @@ commands](#dhop-commands). Any further arguments on the command-line are conside
 ### Commands
 
 **cp** \<*from*\>, \<*to*\>
-:    Copies the file specified by *from* to the location specified by *to*. If *to* represents a directory, then the file
-    is copied to the directory, retaining its name. Otherwise, the file is renamed to the name specified in *to*.
+:    Copies the file(s) specified by *from* to the location specified by *to*. File-globs can be used in the first
+    argument. If *to* represents a directory, then the file is copied to the directory, retaining its name. Otherwise,
+    the file is renamed to the name specified in *to*.
 
 **mv** \<*from*\>, \<*to*\>
-:    Moves the file specified by *from* to the location specified by *to*. If *to* represents a directory, then the file
-    is moved to the directory, retaining its name. Otherwise, the file is renamed to the name specified in *to*. In
-    either case, the file will no longer be present in the location specified by *from*.
+:    Moves the file(s) specified by *from* to the location specified by *to*. File-globs can be used in the first
+    argument. If *to* represents a directory, then the file is moved to the directory, retaining its name. Otherwise,
+    the file is renamed to the name specified in *to*.
 
 **set** \<*name*\> \[*path*\]
 :    Sets a name for a specified directory path. If no path is provided, then the name is set for the current directory.
@@ -150,6 +153,17 @@ will take you to your home directory--well, on *nix, *BSD, and Mac OS X, at leas
 >     dhop set ~
 >
 > then, just as you would on Linux, you can use `dhop ~` to get home. Neat, eh?
+
+### Copying and moving files
+
+Using `dhop cp` or `dhop mv` will allow you to move files from the current directory to a named location or path. You
+can copy or move either a single file or a group of files specified with a file-glob. For example:
+
+~~~~sh
+dhop mv *.md @notes
+~~~~
+
+moves all of the files ending with `.md` to the location marked by the name "notes".
 
 
 ## Installing

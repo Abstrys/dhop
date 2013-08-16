@@ -1,5 +1,6 @@
 require 'yaml' # only needed by the dump method
 require 'rbconfig' # to find the host OS.
+require 'curses'
 require 'fileutils' # for `cp` and `mv`.
 
 module Abstrys
@@ -79,46 +80,44 @@ module Abstrys
       end
     end
 
-    # Copies a file from the given path to a named location.
-    def cp(path, name)
+    def process_cp_or_mv_args(*args)
+
+      if args.length < 2
+        raise "you must specify at least two arguments!"
+      end
+
+      # take the last argument to be the name or location to copy to. All of the
+      # rest of the arguments comprise the list of files to copy.
+      name = args.slice!(-1)
+      path_or_glob = args
+
       if name[0] == '@'
         # chop off the `@` and use this as the name
         name = (name[1..-1])
       end
       dir = @store[:locations][name.to_sym]
-      if !File.exists?(path)
-        raise "#{path} is not a valid file!"
-      end
       if(dir == nil)
-        # assume that *name* is actually a path.
+        # assume that *name* is actually a path_or_glob.
         if Dir.exists?(name)
           dir = name
         else
           raise "#{name} does not refer to a stored location or path."
         end
       end
-      FileUtils.cp_r(path, dir)
+
+      return [path_or_glob, dir]
     end
 
     # Copies a file from the given path to a named location.
-    def mv(path, name)
-      if name[0] == '@'
-        # chop off the `@` and use this as the name
-        name = (name[1..-1])
-      end
-      dir = @store[:locations][name.to_sym]
-      if !File.exists?(path)
-        raise "#{path} is not a valid file!"
-      end
-      if(dir == nil)
-        # assume that *name* is actually a path.
-        if Dir.exists?(name)
-          dir = name
-        else
-          raise "#{name} does not refer to a stored location or path."
-        end
-      end
-      FileUtils.mv(path, dir)
+    def cp(*args)
+      cp_args = process_cp_or_mv_args(*args)
+      FileUtils.cp_r(cp_args[0], cp_args[1])
+    end
+
+    # Copies a file from the given path to a named location.
+    def mv(*args)
+      mv_args = process_cp_or_mv_args(*args)
+      FileUtils.mv(mv_args[0], mv_args[1])
     end
 
     # Writes the path to the `@cmd_path_file`, which can be used by the wrapper
@@ -306,12 +305,11 @@ module Abstrys
       line_count = 0
       DATA.each_line do | line |
         puts line
-        line_count += 1
-        if line_count > 24
-          print '[Press \'return\' to continue...]'
-          x = gets
-          line_count = 0
-        end
+#        line_count += 1
+#        if line_count > 24
+#          print '[Press any key to continue...]'
+#          line_count = 0
+#        end
       end
     end
 
@@ -432,10 +430,9 @@ end
 Abstrys::Dhop.new.run
 
 __END__
+
 Dhop - it takes you places!
 ===========================
-
-[ Usage | Examples | Conveniences | Installing | License | Problems? ]
 
 Dhop (command name: dhop) is a command-line utility written in Ruby that
 provides a number of ways to get around your filesystem quickly:
@@ -449,6 +446,8 @@ provides a number of ways to get around your filesystem quickly:
 Each of these states is persistent and can be used even after your
 terminal session has finished, your computer rebooted, etc.
 
+You can also copy and move files to any location you've named with set.
+
 Usage
 -----
 
@@ -461,17 +460,16 @@ command-line are considered parameters for the given command.
 Commands
 
 cp <from>, <to>
-    Copies the file specified by from to the location specified by to.
-    If to represents a directory, then the file is copied to the
-    directory, retaining its name. Otherwise, the file is renamed to the
-    name specified in to.
+    Copies the file(s) specified by from to the location specified by
+    to. File-globs can be used in the first argument. If to represents a
+    directory, then the file is copied to the directory, retaining its
+    name. Otherwise, the file is renamed to the name specified in to.
 
 mv <from>, <to>
-    Moves the file specified by from to the location specified by to. If
-    to represents a directory, then the file is moved to the directory,
-    retaining its name. Otherwise, the file is renamed to the name
-    specified in to. In either case, the file will no longer be present
-    in the location specified by from.
+    Moves the file(s) specified by from to the location specified by to.
+    File-globs can be used in the first argument. If to represents a
+    directory, then the file is moved to the directory, retaining its
+    name. Otherwise, the file is renamed to the name specified in to.
 
 set <name> [path]
     Sets a name for a specified directory path. If no path is provided,
@@ -504,55 +502,4 @@ pop [option]
 
 help
     Prints help.
-
-Examples
---------
-
-Example 1: Setting and returning to a named location
-
-~~~~ {.sh}
-dhop set docs ~/Documents
-~~~~
-
-Then you can either use:
-
-~~~~ {.sh}
-dhop docs
-~~~~
-
-or
-
-~~~~ {.sh}
-dhop go docs
-~~~~
-
-to go to ~/Documents.
-
-Example 2: Marking and recalling a location
-
-~~~~ {.sh}
-dhop mark
-~~~~
-
-marks the current directory (overwriting any previous mark)
-
-~~~~ {.sh}
-dhop recall
-~~~~
-
-takes you back to the marked location.
-
-Example 3: Pushing and popping locations
-
-~~~~ {.sh}
-dhop push
-~~~~
-
-pushes the current directory on the stack.
-
-~~~~ {.sh}
-dhop pop
-~~~~
-
-pops the last pushed directory from the stack and transports you there.
 

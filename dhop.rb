@@ -128,17 +128,17 @@ module Abstrys
     #
     def write_cmd_path(cmd_path)
       file = ""
-            # make sure the path is expanded
-            cmd_path = File::expand_path(cmd_path)
+      # make sure the path is expanded
+      cmd_path = File::expand_path(cmd_path)
 
-            # we need to do something slightly different on Windows.
-            if @host_os == :windows
-                file = File.open("#{@cmd_path_file}.bat", 'w')
-                file.print "cd /d #{cmd_path}"
-          else
-                file = File.open(@cmd_path_file, 'w')
-                file.print cmd_path
-            end
+      # we need to do something slightly different on Windows.
+      if @host_os == :windows
+        file = File.open("#{@cmd_path_file}.bat", 'w')
+        file.print "cd /d #{cmd_path}"
+      else
+        file = File.open(@cmd_path_file, 'w')
+        file.print cmd_path
+      end
       file.close
     end
 

@@ -7,7 +7,7 @@ if [[ $1 -ne "" ]]; then
 fi
 
 echo
-echo Installing dhop.rb...
+echo Installing dhop.py...
 echo
 
 if [ -e $PATH_TO_INSTALL ]; then
@@ -19,7 +19,7 @@ fi
 
 echo
 echo Copying files:
-cp -v dhop.rb $PATH_TO_INSTALL
+cp -v dhop.py $PATH_TO_INSTALL
 cp -v dhop.sh $PATH_TO_INSTALL
 
 echo

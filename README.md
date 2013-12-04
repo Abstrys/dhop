@@ -3,8 +3,8 @@
 [ [Usage](#usage) | [Examples](#examples) | [Conveniences](#special-conveniences)
 | [Installing](#installing) | [License](#license) | [Problems?](#problems) ]
 
-Dhop (command name: `dhop`) is a command-line utility written in Ruby that provides a number of ways to get around your
-filesystem quickly:
+Dhop (command name: `dhop`) is a command-line utility written in Python that provides a number of ways to get around
+your filesystem quickly:
 
 * **set** named directory locations and then **go** to them by name.
 
@@ -38,9 +38,6 @@ commands](#dhop-commands). Any further arguments on the command-line are conside
 
 **set** \<*name*\> \[*path*\]
 :    Sets a name for a specified directory path. If no path is provided, then the name is set for the current directory.
-
-**go** \<*name*\>
-:    Goes to the location previously **set**, represented by *name*.
 
 **forget** \<*name*\>
 :    Forgets (deletes) a named location that was previously **set**.
@@ -168,7 +165,7 @@ moves all of the files ending with `.md` to the location marked by the name "not
 
 ## Installing
 
-1. You must have [Ruby][] on your system. I've tested this with Ruby 1.9+.
+1. You must have [Python][] on your system. I've tested this with Python 2.7.5.
 
 2. Get the sources. You can either use git:
 
@@ -180,12 +177,12 @@ moves all of the files ending with `.md` to the location marked by the name "not
     an example run using `install.sh` on Mac OS X:
 
         ./install.sh
-        Installing dhop.rb...
+        Installing dhop.py...
 
         Install directory already exists: /Users/eronh/bin
 
         Copying files:
-        dhop.rb -> /Users/eronh/bin/dhop.rb
+        dhop.py -> /Users/eronh/bin/dhop.py
         dhop.sh -> /Users/eronh/bin/dhop.sh
 
         Be sure to add the following line to your .profile, .bashrc, or .bash_profile:
@@ -224,5 +221,4 @@ Well, given that--there are avenues available to alert me of any problems with `
 * You can log an issue on GitHub: <https://github.com/Abstrys/dhop/issues>
 * You can email me at: <eron@abstrys.com>
 
-[ruby]: http://www.ruby-lang.org/
-
+[python]: http://www.python.org/

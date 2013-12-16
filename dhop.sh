@@ -7,7 +7,8 @@ python $DHOPDIR/dhop.py $@
 
 # Once execution is finished, see if dhop wrote a location to cd to...
 if [ -e $DHOP_CMD_FILE ]; then
-  cd `cat $DHOP_CMD_FILE`
+  d=`cat $DHOP_CMD_FILE`
+  eval cd "${d}"
   rm $DHOP_CMD_FILE
 fi
 

@@ -123,12 +123,12 @@ class Dhop:
         'list': 'show_list',
         'mark': 'mark',
         'mv': 'mv',
-        'path': 'resolve',
+        'path': 'path',
         'pop': 'pop',
         'push': 'push',
         'recall': 'recall',
         'remove': 'forget',
-        'resolve': 'resolve',
+        'resolve': 'path',
         'set': 'set_location',
         'unset': 'forget',
     }
@@ -145,7 +145,8 @@ class Dhop:
         home_dir = os.path.expanduser('~') # should work on all systems.
         # if the command file is there, remove it.
         try:
-            os.remove(os.path.join(home_dir, DHOP_CMD_FILE))
+#            os.remove(os.path.join(home_dir, DHOP_CMD_FILE))
+            pass
         except:
             pass
 
@@ -167,6 +168,7 @@ class Dhop:
         """Write the current Dhop data to disk."""
         store_file = open(os.path.join(os.path.expanduser('~'), Dhop.DHOP_STORE), 'wb')
         cPickle.dump(self.store, store_file)
+        store_file.close()
         return
 
     def __cp_or_mv__(self, mv, args):
@@ -280,24 +282,21 @@ class Dhop:
             return
 
         name = args[0]
-        path = ""
+        pathname = ""
 
         if len(args) == 1 or len(args[1]) == 0:
-            path = os.getcwd()
+            pathname = os.getcwd()
         else:
-            # Sometimes a path can be cut into different args (if there are spaces in
+            # Sometimes a pathname can be cut into different args (if there are spaces in
             # the name), so collect all remaining arguments as one name.
             name = args[0]
-            path = self.resolve_location_or_path(" ".join(args[1:]))
+            pathname = self.resolve_location_or_path(" ".join(args[1:]))
 
-        print name
-        print path
-        return
+        if pathname == None:
+            __print_error__("No such location or path 1: %s" % (args[1]))
+            return
 
-        if path == None:
-            __print_error__("No such location or path: %s" % (args[1]))
-        else:
-            self.store['locations'][name] = path
+        self.store['locations'][name] = pathname
         return
 
 
@@ -313,7 +312,7 @@ class Dhop:
 
         name = args[0]
 
-        if self.store['locations'].has_key(name):
+        if name in self.store['locations']:
             del(self.store['locations'][name])
 
         return
@@ -335,7 +334,7 @@ class Dhop:
             path = self.resolve_location_or_path(args[0])
 
         if path == None:
-            __print_error__("No such location or path: %s" % (args[0]))
+            __print_error__("No such location or path 2: %s" % (args[0]))
         else:
             self.store['mark'] = path
         return
@@ -355,7 +354,7 @@ class Dhop:
 
         return
 
-    def resolve(self, args):
+    def path(self, args):
         """Print the full path for the named location.
 
         Usage: dhop resolve [location]
@@ -371,11 +370,11 @@ class Dhop:
             self.show_help('resolve')
             return
 
-        path = self.resolve_location_or_path(args[0])
-        if path == None or len(path) == 0:
-            __print_error__("No such location or path: %s" % (args[0]))
+        pathname = self.resolve_location_or_path(args[0])
+        if pathname == None or len(path) == 0:
+            __print_error__("No such location or path 3: %s" % (args[0]))
         else:
-            print path
+            print pathname
 
         return
 
@@ -393,10 +392,10 @@ class Dhop:
         if len(args) == 0 or len(args[0]) == 0:
             path = os.getcwd()
         else:
-            path = self.resolve_location_or_path(args[0])
+            path = self.resolve_location_or_path(args)
 
         if path == None:
-            __print_error__("No such location or path: %s" % (args[0]))
+            __print_error__("No such location or path 4: %s" % (args))
         else:
             self.store['stack'].append(old_path)
             self.go([path])
@@ -428,8 +427,8 @@ class Dhop:
         if len(args) == 1 and args[0] == 'all':
             while len(self.store['stack']) > 0:
                 path = self.store['stack'].pop()
-            else:
-                path = self.store['stack'].pop()
+        else:
+            path = self.store['stack'].pop()
 
         if path == None or len(path) == 0:
             __print_error__("Weird... no path returned!")
@@ -444,7 +443,6 @@ class Dhop:
 
         Usage: dhop list"""
 
-        print ""
         for key in sorted(self.store.keys()):
             data = self.store[key]
 
@@ -453,22 +451,22 @@ class Dhop:
                 continue
 
             # print the section heading
-            print key.capitalize()
+            print "\n%s" % key.capitalize()
             print '=' * len(key)
 
-        # the output depends on the type of data
-        if type(data) is dict:
-            for data_key in sorted(data.keys()):
-                print "%s: %s" % (data_key, data[data_key])
-        elif type(data) is set or type(data) is list:
-            pos = 1
-            for li in reversed(data):
-              print "%3d: %s" % (pos, li)
-              pos += 1
-        elif type(data) is str:
-            print data
-        else:
-            __print_error__("Uknown data type: %s" % (type(data)))
+            # the output depends on the type of data
+            if type(data) is dict:
+                for data_key in sorted(data.keys()):
+                    print "%s: %s" % (data_key, data[data_key])
+            elif type(data) is set or type(data) is list:
+                pos = 1
+                for li in reversed(data):
+                  print "%3d: %s" % (pos, li)
+                  pos += 1
+            elif type(data) is str:
+                print data
+            else:
+                __print_error__("Uknown data type: %s" % (type(data)))
 
         print ""
         return
@@ -577,7 +575,7 @@ class Dhop:
         if len(args) != 1:
             __print_error__("You must specify one, and *only* one location to go to!")
 
-        path = self.resolve_location_or_path(args[0])
+        path = self.resolve_location_or_path(args)
 
         if path == None:
             __print_error__("Couldn't find either a stored location or a file-system path that matches:")
@@ -589,9 +587,11 @@ class Dhop:
         f = open(os.path.join(home_dir, Dhop.DHOP_CMD_FILE), 'w')
 
         if os.name == 'posix':
-            f.write(path)
+            # if there are any spaces in the pathname, escape them.
+            path = path.replace(" ", "\\ ")
+            f.write("%s" % (path))
         else: # windows?
-            f.write("cd /d {}".format(path))
+            f.write("cd /d %s" % (path))
 
         f.close()
 
@@ -605,13 +605,16 @@ class Dhop:
         If it doesn't exist either as a stored location or path, this method will
         return `None`."""
 
+        # if name is a list, convert it to a string by joining together the elements.
+        if type(name) is list:
+            name = " ".join(name)
+
         # First, if the name is an absolute path (starts with '/' on Unix-likes, and something like 'D:\' on Windows),
         # then no processing needs to be done.  Just check to see if its valid.
         if os.path.isabs(name):
             if os.path.isdir(name) or os.path.isfile(name):
                 return os.path.normpath(name)
-
-        return None
+            return None
 
         # Now that we've gotten that out of the way...
         locations = self.store['locations']
@@ -625,23 +628,13 @@ class Dhop:
 
         resolved_path = None
 
-        # If the user decorated the name with a leading '@' character, it *must*
-        # refer to a stored location.
-        if name.startswith('@'):
-            name = name[1:] # strip off the `@`.
-            if self.store['locations'].has_key(name):
-                resolved_path = os.sep.join([locations[name], rest_of_the_path])
-        else:
-            # The undecorated name *might* refer to a stored location...
-            if self.store['locations'].has_key(name):
-                "%s is a location!" % name
-                resolved_path = os.sep.join([locations[name], rest_of_the_path])
-            elif os.path.isdir(name): # Or it might be a path...
-                "%s is a path!" % name
-                resolved_path = os.sep.join([name, rest_of_the_path])
-            else: # Or it might be a file, or something not created yet...
-                "%s is a file (or something?)" % name
-                resolved_path = name
+        # The undecorated name *might* refer to a stored location...
+        if name in self.store['locations']:
+            resolved_path = os.sep.join([locations[name], rest_of_the_path])
+        elif os.path.isdir(name): # Or it might be a path...
+            resolved_path = os.sep.join([name, rest_of_the_path])
+        else: # Or it might be a file, or something not created yet...
+            resolved_path = name
 
         if resolved_path != None:
             return os.path.normpath(resolved_path)
@@ -655,16 +648,20 @@ class Dhop:
         # The first arg should be either a command (cp, mv, set, etc.), or a location
         # (with or without @)
         command_or_location = args[0]
+
         # The rest are args associated with the command.
         remaining_args = args[1:]
 
         # first, see if its a known command.
-        if Dhop.USER_COMMANDS.has_key(command_or_location):
+        if command_or_location in Dhop.USER_COMMANDS:
             getattr(self, Dhop.USER_COMMANDS[command_or_location])(remaining_args)
             # Write the store (some of the commands might change it).
             self.write_store()
+
         else: # it might be a location or path, in which case, just go there...
-            path = self.resolve_location_or_path(command_or_location)
+
+            path = self.resolve_location_or_path([command_or_location])
+
             if path == None:
                 __print_error__("The first argument is not a location, path, or command that I recognize.")
                 print "Type `dhop help` for a list of commands"
@@ -673,6 +670,7 @@ class Dhop:
                 self.go([path])
                 # There's no need to write the store here... going someplace doesn't
                 # change a thing. Well, not in dhop.
+
         return
 
 # ==========

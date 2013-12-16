@@ -24,7 +24,8 @@ def __print_error__(string):
 
 
 def __confirm__(query):
-    """Asks the user a Y/N question, and returns true/false depending on their
+    """
+    Asks the user a Y/N question, and returns true/false depending on their
     answer."""
     answer = raw_input("%s (y/n): " % (query))
 
@@ -33,50 +34,12 @@ def __confirm__(query):
 
     return False
 
-def __saying__():
-    """Say something nice. Or not."""
-
-    sayings = [
-        "Awwwwe, so cute!",
-        "Don't fret. Play 'cello!",
-        "Enjoy!",
-        "Have fun!!",
-        "I _love_ your outfit!",
-        "I want COFFEE!",
-        "May the odds be ever in your favor.",
-        "Moments\nare the canvas\nupon which\nyou paint your life.",
-        "Peace!",
-        "Ramble on!",
-        "There's never a dull moment; there are only dull people. Unlike you, beauty!",
-    ]
-
-    other_sayings = [
-        "Did you hear that strange noise?",
-        "Enjoy the silence.",
-        "I think someone's behind you.",
-        "I'm scared, can you hold me?",
-        "Isn't it time for bed now?",
-        "It was only a cat... I hope.",
-        "Muuahahahahah!",
-        "That shadow... it didn't move just now, did it?",
-        "The night-time is the *right* time!",
-        "What big *claws* you have!",
-        "What big eyes you have!",
-        "What big teeth you have!",
-        "What was that?",
-    ]
-
-    hour = datetime.now().hour
-
-    if hour in range(0, 3):
-        return random.choice(sayings + other_sayings)
-    else:
-        return random.choice(sayings)
-
 
 # adapted from http://www.python.org/dev/peps/pep-0257/
 def __format_doc__(string, line_start = 0, line_end = -1):
-    """Remove significant leading space from all lines and return the resulting string."""
+    """
+    Remove significant leading space from all lines and return the resulting
+    string."""
 
     if not string:
         return ''
@@ -226,18 +189,18 @@ class Dhop:
 
         Either source_path or dest_path can begin with a named location.
 
-        If source_path is a directory, then the operation will copy the entire
-        directory structure recursively, beginning at that location.
+        If source_path is a directory, then the operation will copy the entire directory
+        structure recursively, beginning at that location.
 
         File-globs (wildcards) can be used in source_path to specify multiple
-        files/directories that match a pattern. In this case, all files or
-        directories that match the pattern will be copied. If any directories match
-        the pattern, the entire directory will be copied, recursively.
+        files/directories that match a pattern. In this case, all files or directories
+        that match the pattern will be copied. If any directories match the pattern, the
+        entire directory will be copied, recursively.
 
         In the case where source_path refers to a single file or directory, you can
-        specify a different name for the file/directory in dest_path to rename the
-        file during the copy. Specifying a filename in dest_path when source_path
-        contains a file-glob will result in an error."""
+        specify a different name for the file/directory in dest_path to rename the file
+        during the copy. Specifying a filename in dest_path when source_path contains a
+        file-glob will result in an error."""
         return self.__cp_or_mv__(False, args)
 
 
@@ -248,18 +211,18 @@ class Dhop:
 
         Either source_path or dest_path can begin with a named location.
 
-        If source_path is a directory, then the operation will copy the entire
-        directory structure recursively, beginning at that location.
+        If source_path is a directory, then the operation will copy the entire directory
+        structure recursively, beginning at that location.
 
         File-globs (wildcards) can be used in source_path to specify multiple
-        files/directories that match a pattern. In this case, all files or
-        directories that match the pattern will be copied. If any directories match
-        the pattern, the entire directory will be copied, recursively.
+        files/directories that match a pattern. In this case, all files or directories
+        that match the pattern will be copied. If any directories match the pattern, the
+        entire directory will be copied, recursively.
 
         In the case where source_path refers to a single file or directory, you can
-        specify a different name for the file/directory in dest_path to rename the
-        file during the copy. Specifying a filename in dest_path when source_path
-        contains a file-glob will result in an error."""
+        specify a different name for the file/directory in dest_path to rename the file
+        during the copy. Specifying a filename in dest_path when source_path contains a
+        file-glob will result in an error."""
         return self.__cp_or_mv__(True, args)
 
 
@@ -268,9 +231,8 @@ class Dhop:
 
         Usage: dhop set <name> [path]
 
-        A name is required. It should consist of alpha-numeric characters,
-        underscores or hyphens only, and should not conflict with any of the dhop
-        command names.
+        A name is required. It should consist of alpha-numeric characters, underscores
+        or hyphens only, and should not conflict with any of the dhop command names.
 
         Note: For a list of command names, type 'dhop help'.
 
@@ -319,8 +281,8 @@ class Dhop:
 
 
     def mark(self, args):
-        """Marks the provided path so that you can later return to it with the
-        'recall' command.
+        """Marks the provided path so that you can later return to it with the 'recall'
+        command.
 
         Usage: dhop mark [path]
 
@@ -379,8 +341,8 @@ class Dhop:
         return
 
     def push(self, args):
-        """Push the current working directory onto the directory stack, then go to
-        the named location or path.
+        """Push the current working directory onto the directory stack, then go to the
+        named location or path.
 
         Usage: dhop push [location]
 
@@ -408,15 +370,16 @@ class Dhop:
     # - all - Pops all of the pushed locations from the stack, then transports you
     # to the final location popped from the stack.
     def pop(self, args):
-        """Pops the last pushed location from the stack, and then transports you to that location.
+        """Pops the last pushed location from the stack, and then transports you to that
+        location.
 
         Usage: dhop pop [all]
 
         Usually, this is used without specifying any arguments.
 
         There is one optional argument: 'all'. If specified, it pops all of the pushed
-        locations from the stack, then transports you to the final location popped
-        from the stack."""
+        locations from the stack, then transports you to the final location popped from
+        the stack."""
         path = ""
 
         # first, check to see if we have anything to pop! If not, return an error.
@@ -483,11 +446,11 @@ class Dhop:
 
         To get help for the 'mark', 'forget', and 'push' commands:
 
-          dhop help mark forget push
+            dhop help mark forget push
 
         To get help for all commands:
 
-          dhop help all"""
+            dhop help all"""
 
         if args == None or len(args) == 0:
             print "\nDhop.py - https://github.com/Abstrys/dhop\n"
@@ -501,76 +464,72 @@ class Dhop:
             if __confirm__('more help?'):
                 print __format_doc__(self.show_help.__doc__, 3)
 
-            if __confirm__('even more help?'):
-                print __format_doc__("""
-                    There are three ways to use dhop:
+                if __confirm__('even more help?'):
+                    print "%s\n" % (__format_doc__("""
+                There are three ways to use dhop:
 
-                    * 'set' a location, and then use that name in place of the path. For
-                      example:
+                * 'set' a location, and then use that name in place of the path. For
+                  example:
 
                       dhop set secret_proj /some/very/long/path/
 
-                        or, if you're already in the /some/very/long/path directory:
+                  or, if you're already in the /some/very/long/path directory:
 
                       dhop set secret_proj
 
-                        then, from wherever you are in the filesystem:
+                  then, from wherever you are in the filesystem:
 
                       dhop secret_proj
 
-                    * 'mark' a location, and then use 'recall' to get back.
+                * 'mark' a location, and then use 'recall' to get back.
 
-                      dhop mark /some/very/long/path
+                       dhop mark /some/very/long/path
 
-                        or, if you're already in the /some/very/long/path directory:
+                  or, if you're already in the /some/very/long/path directory:
 
                       dhop mark
 
-                        then, from wherever you are in the filesystem:
+                  then, from wherever you are in the filesystem:
 
                       dhop recall
 
-                    * 'push' a path, which changes your directory to that path, and saves
-                      the previous path (where you pushed) onto the stack, which can contain
-                      many levels of such pushed directories. 'pop' to get back to the last
-                      one you pushed. 'pop' again to get to the previous one, et cetera.
+                * 'push' a path, which changes your directory to that path, and saves
+                  the previous path (where you pushed) onto the stack, which can contain many
+                  levels of such pushed directories. 'pop' to get back to the last one you
+                  pushed.  'pop' again to get to the previous one, et cetera.
 
                       dhop push /some/very/long/path
 
-                        You'll be taken to /some/very/long path. Then, to get back to where
-                        you were before, type:
+                  You'll be taken to /some/very/long path. Then, to get back to where you were
+                  before, type:
 
-                      dhop pop""")
-
-                print __saying__()
-
+                      dhop pop"""))
         else:
             # fix args, if necessary. A quick check that makes using this function
             # easier.
             if isinstance(args, str):
                 args = [args]
 
-        for arg in args:
-            # get the function associated with the command, and print its doc string.
-            if arg in Dhop.USER_COMMANDS.keys():
-                print "\n%s - %s" % (arg, getattr(self, Dhop.USER_COMMANDS[arg]).__doc__)
-            elif arg == 'all':
-                for cmd in sorted(Dhop.USER_COMMANDS.keys()):
-                    print "\n%s - %s" % (cmd, getattr(self, Dhop.USER_COMMANDS[cmd]).__doc__)
-            else:
-                __print_error__("Unknown command: %s" % (arg))
+            for arg in args:
+                # get the function associated with the command, and print its doc string.
+                if arg in Dhop.USER_COMMANDS.keys():
+                    print "\n%s - %s\n" % (arg, getattr(self, Dhop.USER_COMMANDS[arg]).__doc__)
+                elif arg == 'all':
+                    for cmd in sorted(Dhop.USER_COMMANDS.keys()):
+                        print "\n%s - %s\n" % (cmd, getattr(self, Dhop.USER_COMMANDS[cmd]).__doc__)
+                else:
+                    __print_error__("Unknown command: %s" % (arg))
 
-        print ""
         return
 
 
     def go(self, args):
         """Go (cd) to the named location (or path).
 
-        The args parameter is a list, so to call this function with a single
-        location (the normal case), enclose it with square braces:
+        The args parameter is a list, so to call this function with a single location
+        (the normal case), enclose it with square braces:
 
-        dhop_instance.go([path])"""
+            dhop_instance.go([path])"""
 
         if len(args) != 1:
             __print_error__("You must specify one, and *only* one location to go to!")
@@ -599,11 +558,12 @@ class Dhop:
 
 
     def resolve_location_or_path(self, name):
-        """Check to see if the passed-in name refers to a stored location or path.
-        If it does, return the path.
+        """
+        Check to see if the passed-in name refers to a stored location or path. If it
+        does, return the path.
 
-        If it doesn't exist either as a stored location or path, this method will
-        return `None`."""
+        If it doesn't exist either as a stored location or path, this method will return
+        `None`."""
 
         # if name is a list, convert it to a string by joining together the elements.
         if type(name) is list:

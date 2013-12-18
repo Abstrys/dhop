@@ -132,12 +132,13 @@ You can also use `@` with `push`:
 dhop push @docs
 ~~~~
 
-Which will take you to the location `docs`, but will first push the current directory onto the stack.
+Which will take you to the location `docs`, but will first push the current
+directory onto the stack.
 
 ### Auto-interpretation of paths
 
-If the command isn't recognized, but refers to an actual filesystem location, `dhop` will assume that you want to go
-there, so typing:
+If the command isn't recognized, but refers to an actual filesystem location,
+`dhop` will assume that you want to go there, so typing:
 
 ~~~~sh
 dhop ~
@@ -153,8 +154,9 @@ will take you to your home directory--well, on *nix, *BSD, and Mac OS X, at leas
 
 ### Copying and moving files
 
-Using `dhop cp` or `dhop mv` will allow you to move files from the current directory to a named location or path. You
-can copy or move either a single file or a group of files specified with a file-glob. For example:
+Using `dhop cp` or `dhop mv` will allow you to move files from the current
+directory to a named location or path. You can copy or move either a single
+file or a group of files specified with a file-glob. For example:
 
 ~~~~sh
 dhop mv *.md @notes
@@ -199,22 +201,22 @@ moves all of the files ending with `.md` to the location marked by the name "not
 
         alias dhop="source /Users/eronh/bin/dhop.sh"
 
-    Invoking `dhop` with `source` is necessary to allow `dhop` to change your working directory in your shell session.
+    Invoking `dhop` with `source` is necessary to allow `dhop` to change your
+    working directory in your shell session.
 
 5. Once installed, test it out by typing `dhop help`.
 
 ## License
 
-This software is provided under the terms of the GNU General Public License, v3. For complete info, refer to LICENSE.txt
-(provided with the source code), or go to <http://www.gnu.org/licenses/gpl.html>.
-
-> **Note**: The license does not restrict your ability to use the software itself; it affects only your ability to
-> modify and use the software's *code*, or to claim ownership of it.
+This software is provided with a free distribution license under the terms of
+the BSD "3 clause" public license. For complete info, refer to LICENSE.txt
+(provided with the source code), or go to
+<http://opensource.org/licenses/BSD-3-Clause>.
 
 ## Problems?
 
-You know that this software comes with *no warranty*, right? Refer to the [license](#license) if you have any concerns
-about this.
+You know that this software comes with *no warranty*, right? Refer to the
+[license](#license) if you have any concerns about this.
 
 Well, given that--there are avenues available to alert me of any problems with `dhop`:
 

@@ -35,7 +35,7 @@ def __confirm__(query):
 
 
 # adapted from http://www.python.org/dev/peps/pep-0257/
-def __format_doc__(string, line_start=0, line_end=-1):
+def __format_doc__(string, extra_indent=0, line_start=0, line_end=-1):
     """
     Remove significant leading space from all lines and return the resulting
     string."""
@@ -66,8 +66,12 @@ def __format_doc__(string, line_start=0, line_end=-1):
         result_text = lines[0] + '\n'
         line_start = 1
 
+    # convert the extra indent number into spaces
+    extra_indent = ' ' * extra_indent
+
+    # add each line to the result.
     for cur_line in lines[line_start:line_end]:
-        result_text += cur_line[indent:] + '\n'
+        result_text += "%s%s\n" % (extra_indent, cur_line[indent:])
 
     return result_text
 
@@ -322,7 +326,7 @@ class Dhop:
     def path(self, args):
         """Print the full path for the named location.
 
-        Usage: dhop resolve [location]
+        Usage: dhop path [location]
 
         If location refers to a named location, its full path will be printed.
 
@@ -455,16 +459,21 @@ class Dhop:
             print "The following commands are available:\n"
 
             for cmd in sorted(Dhop.USER_COMMANDS.keys()):
-                print "- " + cmd
+                print "- %s" % cmd
 
+            # print an extra line after the command list
             print ""
 
-            if __confirm__('more help?'):
-                print __format_doc__(self.show_help.__doc__, 3)
+            if not __confirm__('more help?'):
+                return
 
-                if __confirm__('even more help?'):
-                    print "%s\n" % (__format_doc__("""
-                There are three ways to use dhop:
+            print __format_doc__(self.show_help.__doc__, 0, 3)
+
+            if not __confirm__('even more help?'):
+                return
+
+            print "%s\n" % (__format_doc__("""
+                There are three ways to remember locations with dhop:
 
                 * 'set' a location, and then use that name in place of the
                   path. For example:
@@ -504,24 +513,28 @@ class Dhop:
 
                       dhop pop"""))
         else:
-            # fix args, if necessary. A quick check that makes using this
-            # function easier.
+            # Make sure args is a list. If not, make it so. A quick check that
+            # makes using this function easier.
             if isinstance(args, str):
                 args = [args]
 
+            # Iterate through the arguments (there may be more than one command
+            # name that the user wants help with)
             for arg in args:
-                # get the function associated with the command, and print its
-                # doc string.
                 if arg in Dhop.USER_COMMANDS.keys():
+                    # get the function associated with the command, and print
+                    # its doc string.
                     ds = getattr(self, Dhop.USER_COMMANDS[arg]).__doc__
-                    print "\n%s - %s\n" % (arg, getattr(self, ds))
+                    print "\n%s - %s" % (arg, __format_doc__(ds, 2))
                 elif arg == 'all':
+                    # print *all* of the command help.
                     for cmd in sorted(Dhop.USER_COMMANDS.keys()):
                         ds = getattr(self, Dhop.USER_COMMANDS[cmd]).__doc__
-                        print "\n%s - %s\n" % (cmd, getattr(self, ds))
+                        print "\n%s - %s" % (cmd, __format_doc__(ds, 2))
                 else:
+                    # the user wants help for something we don't know about
+                    # (yet).
                     __print_error__("Unknown command: %s" % (arg))
-
         return
 
     def go(self, args):
@@ -610,22 +623,14 @@ class Dhop:
 
     def run(self, args):
         """Run the Dhop main loop"""
-        # The first arg should be either a command (cp, mv, set, etc.), or a
-        # location (with or without @)
-        command_or_location = args[0]
-
-        # The rest are args associated with the command.
-        remaining_args = args[1:]
-
         # first, see if its a known command.
-        if command_or_location in Dhop.USER_COMMANDS:
-            getattr(self,
-                    Dhop.USER_COMMANDS[command_or_location])(remaining_args)
+        if args[0] in Dhop.USER_COMMANDS:
+            getattr(self, Dhop.USER_COMMANDS[args[0]])(args[1:])
             # Write the store (some of the commands might change it).
             self.write_store()
         else:
             # it might be a location or path, in which case, just go there...
-            path = self.resolve_location_or_path([command_or_location])
+            path = self.resolve_location_or_path(args)
 
             if path is None:
                 __print_error__("The first argument is not a location, path,"
@@ -636,16 +641,19 @@ class Dhop:
                 self.go([path])
                 # There's no need to write the store here... going someplace
                 # doesn't change a thing. Well, not in dhop.
-
         return
 
 # ==========
 # the script
 # ==========
+if sys.argv[0] == __file__:
+    dhop = Dhop()
 
-dhop = Dhop()
-if len(sys.argv) < 2:
-    dhop.show_help()
-    exit()
+    # Dhop needs at least one command.
+    if len(sys.argv) < 2:
+        dhop.show_help()
+        sys.exit(0)
 
-dhop.run(sys.argv[1:])
+    # A command was provided... run it.
+    dhop.run(sys.argv[1:])
+    sys.exit(0)

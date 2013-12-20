@@ -139,10 +139,24 @@ class Dhop:
         store_file.close()
         return
 
-    def __cp_or_mv__(self, mv, args):
-        op = 'cp'
-        if mv:
-            op = 'mv'
+    def __interpret_src_args__(self, src_args):
+        """Returns a list of resolved src_args (which may involve expanding a
+        fileglob)."""
+
+        src_paths = list()
+
+        for x in range(0, len(src_args) - 1):
+            src_paths[x] = self.resolve_location_or_path(src_args[x])
+
+        # In the case where src_args has only one value, it may be an
+        # unexpanded file-glob. If so, resolve it and expand the glob here.
+        if len(src_paths) == 1:
+            src_paths = glob.glob(src_paths)
+
+        return src_paths
+
+    def __cp_or_mv__(self, args, op='cp'):
+        """Copies (or moves) files given a source and destination path"""
 
         # there must be (at least) two arguments.
         if len(args) < 2:
@@ -150,41 +164,31 @@ class Dhop:
             self.show_help(op)
             return
 
-        # if there are more than two arguments, then its likely that the shell
-        # already dereferenced a file-glob. File-globs are only allowed on the
-        # first argument, so the *final* argument is assumed to be the
-        # destination.
-
-        # there can be only one!
+        # dest_path: there can be only one! (in last place)
         dest_path = self.resolve_location_or_path(args[-1])
         dest_is_dir = os.path.isdir(dest_path)
 
-        source_paths = args[:-1]  # we are many.
+        # source_paths: we are many (nobody else can be last!)
+        source_paths = self.__interpret_src_args__(args[:-1])
 
-        # in the case where source_paths has only one value, it may be an
-        # unexpanded file-glob. If so, expand it here.
-        expanded = False
-        if len(source_paths) == 1:
-            source_paths = self.resolve_location_or_path(source_paths[0])
-            source_paths = glob.glob(source_paths)
-            expanded = True
-
+        # no globs allowed here!
         for source_path in source_paths:
-            if not expanded:
-                source_path = self.resolve_location_or_path(source_path)
-
+            # if dest_path is a directory, append the filename part of the
+            # source path to the destination path.
             if dest_is_dir:
-                dest_iny_path = os.path.join(dest_path,
-                                             os.path.basename(source_path))
-            else:
-                dest_iny_path = dest_path
+                fname = os.path.basename(source_path)
+                dest_path = os.path.join(dest_path, fname)
 
-            if mv:
-                shutil.move(source_path, dest_iny_path)
+            if op == 'mv':
+                # move path -> path. 'move' doesn't care if the source is a
+                # file or dir.
+                shutil.move(source_path, dest_path)
             elif os.path.isfile(source_path):
-                shutil.copy2(source_path, dest_iny_path)
+                # if source_path is a file, use 'copy2'
+                shutil.copy2(source_path, dest_path)
             elif os.path.isdir(source_path):
-                shutil.copytree(source_path, dest_iny_path)
+                # if source is a dir, then use 'copytree' instead.
+                shutil.copytree(source_path, dest_path)
             else:
                 __print_error__("The source location is neither a file nor a"
                                 "directory!")
@@ -209,7 +213,7 @@ class Dhop:
         can specify a different name for the file/directory in dest_path to
         rename the file during the copy. Specifying a filename in dest_path
         when source_path contains a file-glob will result in an error."""
-        return self.__cp_or_mv__(False, args)
+        return self.__cp_or_mv__(args)
 
     def mv(self, args):
         """Move files from one location/path to another
@@ -230,7 +234,7 @@ class Dhop:
         can specify a different name for the file/directory in dest_path to
         rename the file during the copy. Specifying a filename in dest_path
         when source_path contains a file-glob will result in an error."""
-        return self.__cp_or_mv__(True, args)
+        return self.__cp_or_mv__(args, op='mv')
 
     def set_location(self, args):
         """Set a name for a specified directory path.
@@ -437,6 +441,77 @@ class Dhop:
         print ""
         return
 
+    def show_all_cmd_help(self):
+        """Shows all of the commands with help"""
+        # A primary feature of this display is that the commands are collected
+        # by function, so that we don't print the same information multiple
+        # times.
+        func_list = set(Dhop.USER_COMMANDS.viewvalues())
+
+        uniq_cmds = list()
+
+        for func_name in func_list:
+            x = (cmd for (cmd, func) in Dhop.USER_COMMANDS.items() if func ==
+                 func_name)
+            uniq_cmds.append(sorted(x))
+
+        for cmd in sorted(uniq_cmds):
+            print "\n%s" % ", ".join(cmd)
+            ds = getattr(self, Dhop.USER_COMMANDS[cmd[0]]).__doc__
+            print "\n  %s" % __format_doc__(ds, 2)
+
+    def show_basic_help(self):
+        print "\nDhop.py - https://github.com/Abstrys/dhop\n"
+        print "The following commands are available:\n"
+
+        for cmd in sorted(Dhop.USER_COMMANDS.keys()):
+            print "- %s" % cmd
+
+        # print an extra line after the command list
+        print ""
+
+    def show_extra_help(self):
+        print "%s" % (__format_doc__("""
+            There are three ways to remember locations with dhop:
+
+            * 'set' a location, and then use that name in place of the
+               path. For example:
+
+                   dhop set secret_proj /some/very/long/path/
+
+                or, if you're already in the /some/very/long/path directory:
+
+                   dhop set secret_proj
+
+                then, from wherever you are in the filesystem:
+
+                   dhop secret_proj
+
+            * 'mark' a location, and then use 'recall' to get back.
+
+                   dhop mark /some/very/long/path
+
+               or, if you're already in the /some/very/long/path directory:
+
+                   dhop mark
+
+               then, from wherever you are in the filesystem:
+
+                   dhop recall
+
+            * 'push' a path, which changes your directory to that path, and
+               saves the previous path (where you pushed) onto the stack,
+               which can contain many levels of such pushed directories.
+               'pop' to get back to the last one you pushed. 'pop' again to
+               get to the previous one, et cetera.
+
+                   dhop push /some/very/long/path
+
+               You'll be taken to /some/very/long path. Then, to get back to
+               where you were before, type:
+
+                   dhop pop"""))
+
     def show_help(self, args=None):
         """Shows command-line help.
 
@@ -455,63 +530,21 @@ class Dhop:
             dhop help all"""
 
         if args is None or len(args) == 0:
-            print "\nDhop.py - https://github.com/Abstrys/dhop\n"
-            print "The following commands are available:\n"
 
-            for cmd in sorted(Dhop.USER_COMMANDS.keys()):
-                print "- %s" % cmd
-
-            # print an extra line after the command list
-            print ""
+            self.show_basic_help()
 
             if not __confirm__('more help?'):
+                print ""
                 return
 
+            # next, show help about help.
             print __format_doc__(self.show_help.__doc__, 0, 3)
 
             if not __confirm__('even more help?'):
+                print ""
                 return
 
-            print "%s\n" % (__format_doc__("""
-                There are three ways to remember locations with dhop:
-
-                * 'set' a location, and then use that name in place of the
-                  path. For example:
-
-                      dhop set secret_proj /some/very/long/path/
-
-                  or, if you're already in the /some/very/long/path directory:
-
-                      dhop set secret_proj
-
-                  then, from wherever you are in the filesystem:
-
-                      dhop secret_proj
-
-                * 'mark' a location, and then use 'recall' to get back.
-
-                       dhop mark /some/very/long/path
-
-                  or, if you're already in the /some/very/long/path directory:
-
-                      dhop mark
-
-                  then, from wherever you are in the filesystem:
-
-                      dhop recall
-
-                * 'push' a path, which changes your directory to that path, and
-                  saves the previous path (where you pushed) onto the stack,
-                  which can contain many levels of such pushed directories.
-                  'pop' to get back to the last one you pushed. 'pop' again to
-                  get to the previous one, et cetera.
-
-                      dhop push /some/very/long/path
-
-                  You'll be taken to /some/very/long path. Then, to get back to
-                  where you were before, type:
-
-                      dhop pop"""))
+            self.show_extra_help()
         else:
             # Make sure args is a list. If not, make it so. A quick check that
             # makes using this function easier.
@@ -527,10 +560,7 @@ class Dhop:
                     ds = getattr(self, Dhop.USER_COMMANDS[arg]).__doc__
                     print "\n%s - %s" % (arg, __format_doc__(ds, 2))
                 elif arg == 'all':
-                    # print *all* of the command help.
-                    for cmd in sorted(Dhop.USER_COMMANDS.keys()):
-                        ds = getattr(self, Dhop.USER_COMMANDS[cmd]).__doc__
-                        print "\n%s - %s" % (cmd, __format_doc__(ds, 2))
+                    self.show_all_cmd_help()
                 else:
                     # the user wants help for something we don't know about
                     # (yet).

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import cPickle
+import pickle
 import glob
 import os
 import shutil
@@ -15,10 +15,13 @@ import sys
 #
 # Full documentation is in this file and in README.md
 
+# for Python 2|3 compatibility.
+if not hasattr(__builtins__, 'raw_input'):
+      raw_input=input
 
 def __print_error__(string):
     """Print an error message."""
-    print "*** Dhop error: %s" % (string)
+    print("*** Dhop error: %s" % string)
     return
 
 
@@ -48,7 +51,7 @@ def __format_doc__(string, extra_indent=0, line_start=0, line_end=-1):
 
     # Determine minimum indentation (first line doesn't count, and blank lines
     # don't count):
-    indent = sys.maxint
+    indent = sys.maxsize
     for line in lines[1:]:
         stripped = line.lstrip()
         if stripped:
@@ -110,34 +113,31 @@ class Dhop:
     def __init__(self):
         """Initialize Dhop."""
         home_dir = os.path.expanduser('~')  # should work on all systems.
-        # if the command file is there, remove it.
-        try:
-            os.remove(os.path.join(home_dir, Dhop.DHOP_CMD_FILE))
-            pass
-        except:
-            pass
 
-        # attempt to load the store.
-        try:
+        # remove the command file if it exists
+        command_file_path = os.path.join(home_dir, self.DHOP_CMD_FILE)
+        if os.path.exists(command_file_path):
+            os.remove(command_file_path)
+
+        # check to see if a store file exists
+        path_to_store = os.path.join(home_dir, self.DHOP_STORE)
+        if os.path.exists(path_to_store):
+            # load the existing store.
             store_file = open(os.path.join(home_dir, Dhop.DHOP_STORE), 'rb')
-            self.store = cPickle.load(store_file)
+            self.store = pickle.load(store_file)
             store_file.close()
-        except:
-            pass
-
-        if ((not hasattr(self, 'store') or self.store is None or
-             len(self.store) == 0)):
+        else:
             self.store = Dhop.DEFAULT_STORE
 
-        return
 
-    def write_store(self):
+    def __write_store__(self):
         """Write the current Dhop data to disk."""
         store_file = open(os.path.join(os.path.expanduser('~'),
-                                       Dhop.DHOP_STORE), 'wb')
-        cPickle.dump(self.store, store_file)
+            Dhop.DHOP_STORE), 'wb')
+        pickle.dump(self.store, store_file)
         store_file.close()
         return
+
 
     def __interpret_src_args__(self, src_args):
         """Returns a list of resolved src_args (which may involve expanding a
@@ -347,7 +347,7 @@ class Dhop:
         if pathname is None or len(pathname) == 0:
             __print_error__("No such location or path 3: %s" % (args[0]))
         else:
-            print pathname
+            print(pathname)
 
         return
 
@@ -421,24 +421,24 @@ class Dhop:
                 continue
 
             # print the section heading
-            print "\n%s" % key.capitalize()
-            print '=' * len(key)
+            print("\n%s" % key.capitalize())
+            print('=' * len(key))
 
             # the output depends on the type of data
             if type(data) is dict:
                 for data_key in sorted(data.keys()):
-                    print "%s: %s" % (data_key, data[data_key])
+                    print("%s: %s" % (data_key, data[data_key]))
             elif type(data) is set or type(data) is list:
                 pos = 1
                 for li in reversed(data):
-                    print "%3d: %s" % (pos, li)
+                    print("%3d: %s" % (pos, li))
                     pos += 1
             elif type(data) is str:
-                print data
+                print(data)
             else:
                 __print_error__("Uknown data type: %s" % (type(data)))
 
-        print ""
+        print("")
         return
 
     def show_all_cmd_help(self):
@@ -456,22 +456,22 @@ class Dhop:
             uniq_cmds.append(sorted(x))
 
         for cmd in sorted(uniq_cmds):
-            print "\n%s" % ", ".join(cmd)
+            print("\n%s" % ", ".join(cmd))
             ds = getattr(self, Dhop.USER_COMMANDS[cmd[0]]).__doc__
-            print "\n  %s" % __format_doc__(ds, 2)
+            print("\n  %s" % __format_doc__(ds, 2))
 
     def show_basic_help(self):
-        print "\nDhop.py - https://github.com/Abstrys/dhop\n"
-        print "The following commands are available:\n"
+        print("\nDhop.py - https://github.com/Abstrys/dhop\n")
+        print("The following commands are available:\n")
 
         for cmd in sorted(Dhop.USER_COMMANDS.keys()):
-            print "- %s" % cmd
+            print("- %s" % cmd)
 
         # print an extra line after the command list
-        print ""
+        print("")
 
     def show_extra_help(self):
-        print "%s" % (__format_doc__("""
+        print("%s" % (__format_doc__("""
             There are three ways to remember locations with dhop:
 
             * 'set' a location, and then use that name in place of the
@@ -510,7 +510,7 @@ class Dhop:
                You'll be taken to /some/very/long path. Then, to get back to
                where you were before, type:
 
-                   dhop pop"""))
+                   dhop pop""")))
 
     def show_help(self, args=None):
         """Shows command-line help.
@@ -534,14 +534,14 @@ class Dhop:
             self.show_basic_help()
 
             if not __confirm__('more help?'):
-                print ""
+                print("")
                 return
 
             # next, show help about help.
-            print __format_doc__(self.show_help.__doc__, 0, 3)
+            print(__format_doc__(self.show_help.__doc__, 0, 3))
 
             if not __confirm__('even more help?'):
-                print ""
+                print("")
                 return
 
             self.show_extra_help()
@@ -558,7 +558,7 @@ class Dhop:
                     # get the function associated with the command, and print
                     # its doc string.
                     ds = getattr(self, Dhop.USER_COMMANDS[arg]).__doc__
-                    print "\n%s - %s" % (arg, __format_doc__(ds, 2))
+                    print("\n%s - %s" % (arg, __format_doc__(ds, 2)))
                 elif arg == 'all':
                     self.show_all_cmd_help()
                 else:
@@ -657,7 +657,7 @@ class Dhop:
         if args[0] in Dhop.USER_COMMANDS:
             getattr(self, Dhop.USER_COMMANDS[args[0]])(args[1:])
             # Write the store (some of the commands might change it).
-            self.write_store()
+            self.__write_store__()
         else:
             # it might be a location or path, in which case, just go there...
             path = self.resolve_location_or_path(args)
@@ -665,7 +665,7 @@ class Dhop:
             if path is None:
                 __print_error__("The first argument is not a location, path,"
                                 "or command that I recognize.")
-                print "Type `dhop help` for a list of commands"
+                print("Type `dhop help` for a list of commands")
                 return
             else:
                 self.go([path])

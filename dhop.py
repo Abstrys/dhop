@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import pickle
+import json
 import glob
 import os
 import shutil
@@ -84,7 +84,7 @@ class Dhop:
 
     # some default data
     DHOP_CMD_FILE = '.dhopcmd'
-    DHOP_STORE = '.dhop'
+    DHOP_STORE = '.dhop.json'
     USER_COMMANDS = {
         'add': 'set_location',
         'cp': 'cp',
@@ -124,7 +124,7 @@ class Dhop:
         if os.path.exists(path_to_store):
             # load the existing store.
             store_file = open(os.path.join(home_dir, Dhop.DHOP_STORE), 'rb')
-            self.store = pickle.load(store_file)
+            self.store = json.load(store_file)
             store_file.close()
         else:
             self.store = Dhop.DEFAULT_STORE
@@ -134,7 +134,7 @@ class Dhop:
         """Write the current Dhop data to disk."""
         store_file = open(os.path.join(os.path.expanduser('~'),
             Dhop.DHOP_STORE), 'wb')
-        pickle.dump(self.store, store_file)
+        json.dump(self.store, store_file)
         store_file.close()
         return
 

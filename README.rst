@@ -18,6 +18,8 @@ your computer rebooted, etc.
 
 You can also copy and move files to any location you've named with *set*.
 
+.. _usage:
+
 Usage
 =====
 
@@ -26,6 +28,7 @@ Usage
 Where *cmd_or_location* represents either a named location (recorded with **set**) or one of the
 known commands. Any further arguments on the command-line are considered parameters for the given
 command.
+
 
 Commands
 --------

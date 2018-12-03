@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import json
 import glob
 import os
@@ -7,13 +7,13 @@ import sys
 
 # A command-line utility for hopping around the filesystem.
 #
-# Copyright (C) 2013, Abstrys / Eron Hennessey
+# Copyright (C) 2013-2018, Abstrys / Eron Hennessey
 #
 # This file is released under the terms of the GNU General Public License, v3.
 # For details about this license, see LICENSE.txt or go to
 # <http://www.gnu.org/licenses/gpl.html>
 #
-# Full documentation is in this file and in README.md
+# Full documentation is in this file and in README.rst
 
 # for Python 2|3 compatibility.
 if not hasattr(__builtins__, 'raw_input'):
@@ -41,7 +41,8 @@ def __confirm__(query):
 def __format_doc__(string, extra_indent=0, line_start=0, line_end=-1):
     """
     Remove significant leading space from all lines and return the resulting
-    string."""
+    string.
+    """
 
     if not string:
         return ''
@@ -123,7 +124,7 @@ class Dhop:
         path_to_store = os.path.join(home_dir, self.DHOP_STORE)
         if os.path.exists(path_to_store):
             # load the existing store.
-            store_file = open(os.path.join(home_dir, Dhop.DHOP_STORE), 'rb')
+            store_file = open(os.path.join(home_dir, Dhop.DHOP_STORE), 'r')
             self.store = json.load(store_file)
             store_file.close()
         else:
@@ -132,9 +133,9 @@ class Dhop:
 
     def __write_store__(self):
         """Write the current Dhop data to disk."""
-        store_file = open(os.path.join(os.path.expanduser('~'),
-            Dhop.DHOP_STORE), 'wb')
-        json.dump(self.store, store_file)
+        store_file = open(os.path.join(os.path.expanduser('~'), Dhop.DHOP_STORE), 'w')
+        json_str = json.JSONEncoder().encode(self.store)
+        store_file.write(json_str)
         store_file.close()
         return
 
@@ -156,7 +157,9 @@ class Dhop:
         return src_paths
 
     def __cp_or_mv__(self, args, op='cp'):
-        """Copies (or moves) files given a source and destination path"""
+        """
+        Copies (or moves) files given a source and destination path.
+        """
 
         # there must be (at least) two arguments.
         if len(args) < 2:
@@ -195,7 +198,8 @@ class Dhop:
         return
 
     def cp(self, args):
-        """Copy files from one location/path to another
+        """
+        Copy files from one location/path to another
 
         Usage: dhop cp <source_path> <dest_path>
 
@@ -216,7 +220,8 @@ class Dhop:
         return self.__cp_or_mv__(args)
 
     def mv(self, args):
-        """Move files from one location/path to another
+        """
+        Move files from one location/path to another
 
         Usage: dhop mv <source_path> <dest_path>
 
@@ -590,17 +595,15 @@ class Dhop:
         # OK, it looks like we're clear to *go*. Write the command file and
         # return.
         home_dir = os.path.expanduser('~')  # should work on all systems.
-        f = open(os.path.join(home_dir, Dhop.DHOP_CMD_FILE), 'w')
-
+        cmd_file_location = os.path.join(home_dir, Dhop.DHOP_CMD_FILE)
+        f = open(cmd_file_location, 'w')
         if os.name == 'posix':
             # if there are any spaces in the pathname, escape them.
             path = path.replace(" ", "\\ ")
-            f.write("%s" % (path))
-        else:  # windows?
+            f.write("cd " + path)
+        else: # windows?
             f.write("cd /d %s" % (path))
-
         f.close()
-
         return True
 
     def resolve_location_or_path(self, name):
@@ -652,7 +655,9 @@ class Dhop:
         return resolved_path
 
     def run(self, args):
-        """Run the Dhop main loop"""
+        """
+        Run the Dhop main loop
+        """
         # first, see if its a known command.
         if args[0] in Dhop.USER_COMMANDS:
             getattr(self, Dhop.USER_COMMANDS[args[0]])(args[1:])
@@ -687,3 +692,4 @@ if sys.argv[0] == __file__:
     # A command was provided... run it.
     dhop.run(sys.argv[1:])
     sys.exit(0)
+

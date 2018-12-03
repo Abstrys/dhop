@@ -7,7 +7,7 @@ if [[ $1 -ne "" ]]; then
 fi
 
 echo
-echo Installing dhop.py...
+echo Installing dhop!
 echo
 
 if [ -e $PATH_TO_INSTALL ]; then
@@ -19,8 +19,8 @@ fi
 
 echo
 echo Copying files:
-cp -v dhop.py $PATH_TO_INSTALL
-cp -v dhop.sh $PATH_TO_INSTALL
+cp -v src/dhop/dhop.py $PATH_TO_INSTALL/
+cp -v src/dhop.sh $PATH_TO_INSTALL/
 
 echo
 echo Be sure to add the following line to your .profile, .bashrc, or .bash_profile:
@@ -31,4 +31,3 @@ echo Feel free to cut-and-paste the above line, since it refers to the actual
 echo install location. Then, you can simply type \'dhop\' on the command-line
 echo for help.
 echo
-

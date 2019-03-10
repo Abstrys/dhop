@@ -4,10 +4,12 @@
 Using Dhop
 ##########
 
-.. contents::
-   :local:
+.. only:: html
 
-A guide to running :command:`dhop` commands.
+   .. contents::
+      :local:
+
+   A guide to running :command:`dhop` commands.
 
 Usage
 =====
@@ -41,8 +43,8 @@ Additionally, you can also use :command:`dhop` just like :command:`cd`::
 
 .. _usage-command:
 
-Running dhop commands
----------------------
+Run dhop commands
+-----------------
 
 Commands are used to manipulate :command:`dhop`\ 's locations, and are run as:
 
@@ -88,6 +90,10 @@ Commands
 
    Goes to the directory that was last marked.
 
+.. option:: path <location_or_path>
+
+   Prints the path of the given :option:`set` location.
+
 .. option:: push <path>
 
    Pushes the current working directory to the directory stack, then goes to the location referenced
@@ -103,9 +109,10 @@ Commands
       Pops all of the pushed locations from the stack, then transports you to the final location
       popped from the stack.
 
-.. option:: help
+.. option:: help [command]
 
-   Prints help.
+   Prints help. You can supply an optional command argument (ex: "pop", "recall", etc.) to get help
+   for that command.
 
 Examples
 ========

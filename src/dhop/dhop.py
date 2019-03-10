@@ -20,15 +20,18 @@ if not hasattr(__builtins__, 'raw_input'):
       raw_input=input
 
 def __print_error__(string):
-    """Print an error message."""
-    print("*** Dhop error: %s" % string)
+    """
+    Print an error message.
+    """
+    print("!! dhop error: %s" % string)
     return
 
 
 def __confirm__(query):
     """
     Asks the user a Y/N question, and returns true/false depending on their
-    answer."""
+    answer.
+    """
     answer = raw_input("%s (y/n): " % (query))
 
     if answer.lower() == 'y':
@@ -43,7 +46,6 @@ def __format_doc__(string, extra_indent=0, line_start=0, line_end=-1):
     Remove significant leading space from all lines and return the resulting
     string.
     """
-
     if not string:
         return ''
 
@@ -81,8 +83,9 @@ def __format_doc__(string, extra_indent=0, line_start=0, line_end=-1):
 
 
 class Dhop:
-    """Contains the public dhop class."""
-
+    """
+    Contains the public dhop class.
+    """
     # some default data
     DHOP_CMD_FILE = '.dhopcmd'
     DHOP_STORE = '.dhop.json'
@@ -112,7 +115,9 @@ class Dhop:
     }
 
     def __init__(self):
-        """Initialize Dhop."""
+        """
+        Initialize Dhop.
+        """
         home_dir = os.path.expanduser('~')  # should work on all systems.
 
         # remove the command file if it exists
@@ -132,7 +137,9 @@ class Dhop:
 
 
     def __write_store__(self):
-        """Write the current Dhop data to disk."""
+        """
+        Write the current Dhop data to disk.
+        """
         store_file = open(os.path.join(os.path.expanduser('~'), Dhop.DHOP_STORE), 'w')
         json_str = json.JSONEncoder().encode(self.store)
         store_file.write(json_str)
@@ -141,9 +148,10 @@ class Dhop:
 
 
     def __interpret_src_args__(self, src_args):
-        """Returns a list of resolved src_args (which may involve expanding a
-        fileglob)."""
-
+        """
+        Returns a list of resolved src_args (which may involve expanding a
+        fileglob).
+        """
         src_paths = list()
 
         for x in range(0, len(src_args) - 1):
@@ -160,7 +168,6 @@ class Dhop:
         """
         Copies (or moves) files given a source and destination path.
         """
-
         # there must be (at least) two arguments.
         if len(args) < 2:
             __print_error__("%s requires two arguments!" % op)
@@ -242,7 +249,8 @@ class Dhop:
         return self.__cp_or_mv__(args, op='mv')
 
     def set_location(self, args):
-        """Set a name for a specified directory path.
+        """
+        Set a name for a specified directory path.
 
         Usage: dhop set <name> [path]
 
@@ -253,7 +261,8 @@ class Dhop:
         Note: For a list of command names, type 'dhop help'.
 
         If no path is provided, then the name is set for the current
-        directory."""
+        directory.
+        """
 
         if len(args) == 0:
             __print_error__("You must specify at least one argument for set.")
@@ -272,18 +281,16 @@ class Dhop:
             name = args[0]
             pathname = self.resolve_location_or_path(" ".join(args[1:]))
 
-        if pathname is None:
-            __print_error__("No such location or path 1: %s" % (args[1]))
-            return
+        if pathname is not None:
+            self.store['locations'][name] = pathname
 
-        self.store['locations'][name] = pathname
-        return
 
     def forget(self, args):
-        """Forget (delete) a named location that was previously set.
+        """
+        Forget (delete) a named location that was previously set.
 
-        Usage: dhop forget [location]"""
-
+        Usage: dhop forget [location]
+        """
         if len(args) == 0 or len(args[0]) == 0:
             __print_error__("Can't forget nothing!")
             self.help(['forget'])
@@ -294,16 +301,17 @@ class Dhop:
         if name in self.store['locations']:
             del(self.store['locations'][name])
 
-        return
 
     def mark(self, args):
-        """Marks the provided path so that you can later return to it with the
+        """
+        Marks the provided path so that you can later return to it with the
         'recall' command.
 
         Usage: dhop mark [path]
 
         If no path is given, then the current directory is assumed. This
-        command overwrites any previous marks; there can be only one!"""
+        command overwrites any previous marks; there can be only one!
+        """
         path = ""
 
         if len(args) == 0 or len(args[0]) == 0:
@@ -311,59 +319,57 @@ class Dhop:
         else:
             path = self.resolve_location_or_path(args[0])
 
-        if path is None:
-            __print_error__("No such location or path 2: %s" % (args[0]))
-        else:
+        if path is not None:
             self.store['mark'] = path
-        return
+
 
     def recall(self, args):
-        """Return to the directory that was last marked with the 'mark'
+        """
+        Return to the directory that was last marked with the 'mark'
         command.
 
-        Usage: dhop recall"""
+        Usage: dhop recall
+        """
         path = self.store['mark']
 
-        if path is None or len(path) == 0:
+        if path is not None and len(path) != 0:
+            self.go([path])
+        else:
             __print_error__("Mark is not set! Use 'mark' to set a mark.")
             self.show_help('mark')
-        else:
-            self.go([path])
 
-        return
 
     def path(self, args):
-        """Print the full path for the named location.
+        """
+        Print the full path for the named location.
 
         Usage: dhop path [location]
 
-        If location refers to a named location, its full path will be printed.
-
-        If location refers to a path, then the full path will be printed.
-
-        Otherwise, an error will be printed."""
-
+        * If location refers to a named location, its full path will be printed.
+        * If location refers to a path, then the full path will be printed.
+        * Otherwise, an error will be printed.
+        """
         if len(args) != 1:
             __print_error__("You must supply one argument to resolve!")
             self.show_help('resolve')
             return
 
         pathname = self.resolve_location_or_path(args[0])
-        if pathname is None or len(pathname) == 0:
-            __print_error__("No such location or path 3: %s" % (args[0]))
-        else:
+
+        if pathname != None and len(pathname) != 0:
             print(pathname)
 
-        return
 
     def push(self, args):
-        """Push the current working directory onto the directory stack, then go
+        """
+        Push the current working directory onto the directory stack, then go
         to the named location or path.
 
         Usage: dhop push [location]
 
         If a location is not given, then the current working directory will
-        still be pushed onto the stack, but no other action will be taken."""
+        still be pushed onto the stack, but no other action will be taken.
+        """
         old_path = os.getcwd()
         path = ""
 
@@ -372,16 +378,14 @@ class Dhop:
         else:
             path = self.resolve_location_or_path(args)
 
-        if path is None:
-            __print_error__("No such location or path 4: %s" % (args))
-        else:
+        if path is not None:
             self.store['stack'].append(old_path)
             self.go([path])
 
-        return
 
     def pop(self, args):
-        """Pops the last pushed location from the stack, and then transports
+        """
+        Pops the last pushed location from the stack, and then transports
         you to that location.
 
         Usage: dhop pop [all]
@@ -390,7 +394,8 @@ class Dhop:
 
         There is one optional argument: 'all'. If specified, it pops all of the
         pushed locations from the stack, then transports you to the final
-        location popped from the stack."""
+        location popped from the stack.
+        """
         path = ""
 
         # first, check to see if we have anything to pop! If not, return an
@@ -413,10 +418,11 @@ class Dhop:
         return
 
     def show_list(self, args):
-        """List all of the currently known locations.
+        """
+        List all of the currently known locations.
 
-        Usage: dhop list"""
-
+        Usage: dhop list
+        """
         for key in sorted(self.store.keys()):
             data = self.store[key]
 
@@ -447,7 +453,9 @@ class Dhop:
         return
 
     def show_all_cmd_help(self):
-        """Shows all of the commands with help"""
+        """
+        Shows all of the commands with help
+        """
         # A primary feature of this display is that the commands are collected
         # by function, so that we don't print the same information multiple
         # times.
@@ -518,7 +526,8 @@ class Dhop:
                    dhop pop""")))
 
     def show_help(self, args=None):
-        """Shows command-line help.
+        """
+        Shows command-line help.
 
         Usage: dhop help [cmd] ...
 
@@ -532,7 +541,8 @@ class Dhop:
 
         To get help for all commands:
 
-            dhop help all"""
+            dhop help all
+        """
 
         if args is None or len(args) == 0:
 
@@ -573,13 +583,14 @@ class Dhop:
         return
 
     def go(self, args):
-        """Go (cd) to the named location (or path).
+        """
+        Go (cd) to the named location (or path).
 
         The args parameter is a list, so to call this function with a single
         location (the normal case), enclose it with square braces:
 
-            dhop_instance.go([path])"""
-
+            dhop_instance.go([path])
+        """
         if len(args) != 1:
             __print_error__("You must specify one, and *only* one location to"
                             "go to!")
@@ -612,8 +623,8 @@ class Dhop:
         If it does, return the path.
 
         If it doesn't exist either as a stored location or path, this method
-        will return `None`."""
-
+        will return `None`.
+        """
         # if name is a list, convert it to a string by joining together the
         # elements.
         if type(name) is list:
@@ -621,11 +632,13 @@ class Dhop:
 
         # First, if the name is an absolute path (starts with '/' on
         # Unix-likes, and something like 'D:\' on Windows), then no processing
-        # needs to be done.  Just check to see if its valid.
+        # needs to be done. Just check to see if its valid.
         if os.path.isabs(name):
-            if os.path.isdir(name) or os.path.isfile(name):
+            if os.path.exists(name):
                 return os.path.normpath(name)
-            return None
+            else:
+                __print_error__("Path doesn't exist: %s" % name)
+                return None
 
         # Now that we've gotten that out of the way...
         locations = self.store['locations']
@@ -643,13 +656,20 @@ class Dhop:
         # The undecorated name *might* refer to a stored location...
         if name in self.store['locations']:
             resolved_path = os.sep.join([locations[name], rest_of_the_path])
-        elif os.path.isdir(name):  # Or it might be a path...
-            resolved_path = os.sep.join([name, rest_of_the_path])
-        else:  # Or it might be a file, or something not created yet...
-            resolved_path = name
-
-        if resolved_path is not None:
-            return os.path.normpath(resolved_path)
+            if not os.path.exists(resolved_path):
+                __print_error__("Location %s is set, but does not refer to a valid location!" %
+                    (name, resolved_path))
+                resolved_path = None
+        else:
+            if rest_of_the_path == '':
+                resolved_path = name
+            else:
+                resolved_path = os.sep.join([name, rest_of_the_path])
+            if os.path.exists(resolved_path):
+                resolved_path = os.path.normpath(resolved_path)
+            else:
+                __print_error__("Location or path doesn't exist: %s" % resolved_path)
+                resolved_path = None
 
         # whatever it is (or isn't), return it.
         return resolved_path
@@ -668,9 +688,7 @@ class Dhop:
             path = self.resolve_location_or_path(args)
 
             if path is None:
-                __print_error__("The first argument is not a location, path,"
-                                "or command that I recognize.")
-                print("Type `dhop help` for a list of commands")
+                print("Type `dhop help` for a list of commands.")
                 return
             else:
                 self.go([path])

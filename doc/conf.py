@@ -14,6 +14,8 @@
 #
 import os
 import sys
+
+# Add the dhop source to sys.path in order to pull docs from it.
 sys.path.insert(0, os.path.abspath('../src/'))
 
 
@@ -39,9 +41,9 @@ release = '1.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.todo',
-    'sphinx.ext.coverage',
+    'sphinx.ext.autodoc', # pull documentation from the `../src/` path added earlier.
+    'sphinx.ext.todo', # allow the use of `.. todo::` directive.
+    'sphinx.ext.coverage', # allow API coverage details.
 ]
 
 # Add any paths that contain templates here, relative to this directory.

@@ -3,9 +3,8 @@ name = "abstrys-dhop"
 version = "2.0.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 dirs = "5.0.1"
 env_home = "0.1.0"
 json = "0.12.4"
+clap = { version = "4.5.53", features = ["derive"] }

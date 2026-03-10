@@ -33,19 +33,12 @@ command.
 Commands
 --------
 
-**cp** <*from*>, <*to*>
-    Copies the file(s) specified by *from* to the location specified by *to*. File-globs can be used
-    in the first argument. If *to* represents a directory, then the file is copied to the directory,
-    retaining its name. Otherwise, the file is renamed to the name specified in *to*.
-
-**mv** <*from*>, <*to*>
-    Moves the file(s) specified by *from* to the location specified by *to*. File-globs can be used
-    in the first argument. If *to* represents a directory, then the file is moved to the directory,
-    retaining its name. Otherwise, the file is renamed to the name specified in *to*.
-
 **set** <*name*> [*path*]
     Sets a name for a specified directory path. If no path is provided, then the name is set for the
     current directory.
+
+**go** <*name*>
+    Go to a specified named location that was previously **set**.
 
 **forget** <*name*>
     Forgets (deletes) a named location that was previously **set**.
@@ -66,6 +59,16 @@ Commands
 
     + **all** - Pops all of the pushed locations from the stack, then transports you to the final
       location popped from the stack.
+
+**cp** <*from*>, <*to*>
+    Copies the file(s) specified by *from* to the location specified by *to*. File-globs can be used
+    in the first argument. If *to* represents a directory, then the file is copied to the directory,
+    retaining its name. Otherwise, the file is renamed to the name specified in *to*.
+
+**mv** <*from*>, <*to*>
+    Moves the file(s) specified by *from* to the location specified by *to*. File-globs can be used
+    in the first argument. If *to* represents a directory, then the file is moved to the directory,
+    retaining its name. Otherwise, the file is renamed to the name specified in *to*.
 
 **help**
     Prints help.
@@ -122,6 +125,7 @@ pushes the current directory on the stack.
 
 pops the last pushed directory from the stack and transports you there.
 
+
 Special Conveniences
 ====================
 
@@ -154,6 +158,7 @@ file-glob. For example::
  dhop mv *.md @notes
 
 moves all of the files ending with ``.md`` to the location marked by the name "notes".
+
 
 Installing
 ==========
@@ -195,6 +200,7 @@ Installing
     your shell session.
 
 5.  Once installed, test it out by typing ``dhop help``.
+
 
 License
 =======

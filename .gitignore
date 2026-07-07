@@ -3,6 +3,7 @@
 *.html
 *.idea
 dhop_info.txt
+dhop
 __pycache__
 output/
 

@@ -304,8 +304,7 @@ class Dhop:
 
     def mark(self, args):
         """
-        Marks the provided path so that you can later return to it with the
-        'recall' command.
+        Marks the provided path so that you can later return to it with the 'recall' command.
 
         Usage: dhop mark [path]
 
@@ -325,8 +324,7 @@ class Dhop:
 
     def recall(self, args):
         """
-        Return to the directory that was last marked with the 'mark'
-        command.
+        Return to the directory that was last marked with the 'mark' command.
 
         Usage: dhop recall
         """

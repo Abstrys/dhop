@@ -360,8 +360,7 @@ class Dhop:
 
     def push(self, args):
         """
-        Push the current working directory onto the directory stack, then go
-        to the named location or path.
+        Push the current working directory onto the directory stack, then go to the named location or path.
 
         Usage: dhop push [location]
 
@@ -383,8 +382,7 @@ class Dhop:
 
     def pop(self, args):
         """
-        Pops the last pushed location from the stack, and then transports
-        you to that location.
+        Pops the last pushed location from the stack, and then transports you to that location.
 
         Usage: dhop pop [all]
 

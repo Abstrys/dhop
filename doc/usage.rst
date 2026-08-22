@@ -114,6 +114,7 @@ Commands
    Prints help. You can supply an optional command argument (ex: "pop", "recall", etc.) to get help
    for that command.
 
+
 Examples
 ========
 
@@ -167,7 +168,7 @@ pushes the current directory on the stack.
 pops the last pushed directory from the stack and transports you there.
 
 
-Special Conveniences
+Special conveniences
 ====================
 
 I've added these special conveniences because I use them.  ;)
@@ -200,4 +201,3 @@ file-glob. For example::
  dhop mv *.md notes
 
 moves all of the files ending with ``.md`` to the location marked by the name "notes".
-

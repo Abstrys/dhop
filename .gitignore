@@ -5,3 +5,9 @@
 dhop_info.txt
 __pycache__
 output/
+Cargo.lock
+dist
+
+# Added by cargo
+
+/target

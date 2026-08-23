@@ -274,7 +274,7 @@ If you want to build ``dhop`` yourself, you'll need both ``cargo`` and
       ./package.sh
 
 #. Go into the ``dist/abstrys-dhop-linux`` directory, and run the ``install.sh``
-   script there:
+   script there::
 
      cd dist/abstrys-dhop-linux/
      ./install.sh

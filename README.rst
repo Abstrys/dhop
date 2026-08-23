@@ -264,14 +264,22 @@ Building from source
 If you want to build ``dhop`` yourself, you'll need both ``cargo`` and
 ``rustc``. If you are already set up for Rust development, then:
 
-#. Download the source from GitHub:
+#. Download the source from GitHub::
 
-#. Run the ``package.sh`` script within the package root.
+      git clone https://github.com/Abstrys/dhop.git
+
+#. Run the ``package.sh`` script within the package root::
+
+      cd dhop
+      ./package.sh
 
 #. Go into the ``dist/abstrys-dhop-linux`` directory, and run the ``install.sh``
-   script there.
+   script there:
 
-   The same details apply at this point as when `installing from an archive
+     cd dist/abstrys-dhop-linux/
+     ./install.sh
+
+#. The same details apply at this point as when `installing from an archive
    <install-from-archive_>`_.
 
 

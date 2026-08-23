@@ -4,7 +4,5 @@ version = "2.0.0"
 edition = '2024'
 
 [dependencies]
-clap = {version = "4.6.1", features = ["cargo"]}
-dirs = "5.0.1"
-env_home = "0.1.0"
+clap = {version = "4.6.6", features = ["cargo"]}
 json = "0.12.4"

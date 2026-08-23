@@ -280,10 +280,10 @@ If you want to build ``dhop`` yourself, you'll need both ``cargo`` and
 #. Go into the ``dist/abstrys-dhop-linux`` directory, and run the ``install.sh``
    script there:
 
-  .. code:: sh
+   .. code:: sh
 
-     cd dist/abstrys-dhop-linux/
-     ./install.sh
+      cd dist/abstrys-dhop-linux/
+      ./install.sh
 
 #. The same details apply at this point as when `installing from an archive
    <install-from-archive_>`_.

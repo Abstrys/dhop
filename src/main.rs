@@ -42,6 +42,7 @@ fn goto_path(cmd_file_path: &PathBuf, desired_path: &PathBuf, verbosity: u8) {
         if verbosity > 0 {
             println!("Wrote command file to '{}'.", cmd_file_path.display());
         }
+        println!("Moving to '{}'.", desired_path.display());
     }
     else {
         println!("ERROR: '{}' is a non-existent path!", desired_path.display());
@@ -308,11 +309,11 @@ fn main() {
                 }
                 let cur_dir = env::current_dir().expect("No current dir?");
                 let _ = dhop_store["stack"].push(cur_dir.to_str());
-                println!("Added '{}' to stack. Moving to '{}'.", cur_dir.display(), path.display());
+                println!("Added '{}' to stack.", cur_dir.display());
                 goto_path(&cmd_file_path, &path, verbosity);
             }
             else {
-               println!("Error: No existing location named '{}', nor is it a path!!", name);
+               println!("ERROR: No existing location named '{}', nor is it a path!!", name);
             }
         }
         Some(("pop", _sub_matches)) => {
@@ -327,11 +328,11 @@ fn main() {
                 goto_path(&cmd_file_path, &path, verbosity);
             }
             else {
-                println!("No paths exist on the stack! Going nowhere.");
+                println!("No paths exist on the stack! Going... nowhere.");
             }
         }
         Some((x, _sub_matches)) => {
-            println!("A value '{}' was provided, but it's not a subcommand!", x);
+            println!("ERROR: Unknown subcommand: '{}'!", x);
         }
         None => {
             if matches.args_present() {

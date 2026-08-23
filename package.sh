@@ -7,7 +7,7 @@ mkdir -p $DIST_DIR/bin
 echo "Copying files..."
 cp install_files/install.sh $DIST_DIR
 cp install_files/uninstall.sh $DIST_DIR
-cp README.md $DIST_DIR
+cp README.rst $DIST_DIR/README.txt
 cp LICENSE.txt $DIST_DIR
 cp target/release/abstrys-dhop $DIST_DIR/bin
 cp install_files/dhop.sh $DIST_DIR/bin

@@ -1,5 +1,10 @@
 #!/bin/bash
-DHOPDIR=$HOME/bin
+
+# See: https://stackoverflow.com/questions/630372/determine-the-path-of-the-executing-bash-script
+DHOPDIR="$(dirname -- "${BASH_SOURCE[0]}")"
+DHOPDIR="$(cd -- "$DHOPDIR" && pwd)"
+
+# This is constant.
 DHOP_CMD_FILE=$HOME/.dhopcmd
 
 # Run the dhop binary, passing it all of the command-line arguments.

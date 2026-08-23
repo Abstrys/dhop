@@ -1,9 +1,11 @@
 #!/bin/bash
 
-PATH_TO_INSTALL=$HOME/bin
-
-if [[ $1 -ne "" ]]; then
+if [[ $# -eq 1 ]]; then
   PATH_TO_INSTALL=$1
+elif [[ -e "$HOME/.local/gtif/bin/" ]] then
+  PATH_TO_INSTALL="$HOME/.local/bin"
+else
+  PATH_TO_INSTALL=$HOME/bin
 fi
 
 echo
@@ -27,6 +29,6 @@ echo
 echo   alias dhop=\"source $PATH_TO_INSTALL/dhop.sh\"
 echo
 echo Feel free to cut-and-paste the above line, since it refers to the actual
-echo install location. Then, you can simply type \'dhop\' on the command-line
+echo install location. Then, you can simply type \'dhop --help\' on the command-line
 echo for help.
 echo

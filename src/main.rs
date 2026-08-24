@@ -7,9 +7,11 @@
 /// Full documentation is in this file and in README.rst
 
 use clap::{Command, arg, command};
-use std::path::PathBuf;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::env;
 use std::fs;
+use std::path::{Path, PathBuf};
 
 const DHOP_CMD_FILE: &str = ".dhopcmd";
 const DHOP_STORE: &str = ".dhop.json";
@@ -36,16 +38,90 @@ const CMD_PATH_HELP: &str = concat!(
     "'cd', 'cp', 'ls', and so on!\n",
 );
 
+/// The serialized data struct for Dhop. It holds all named locations, the marked location, and the
+/// push/pop stack.
+#[derive(Serialize, Deserialize)]
+struct DhopStore {
+    locations: HashMap<String, PathBuf>,
+    mark: Option<PathBuf>,
+    stack: Vec<PathBuf>,
+}
+
+impl DhopStore {
+    /// Load DhopStore data from a JSON file.
+    fn load(path: &Path, verbosity: u8) -> serde_json::Result<Self> {
+        if path.is_file() {
+            let file_contents = fs::read_to_string(&path).expect("ERROR: Can't read from Dhop store!");
+            let data: DhopStore = serde_json::from_str(file_contents.as_str())?;
+            if verbosity > 0 {
+                println!("Loaded data from '{}'", path.display());
+            }
+            Ok(data)
+        }
+        else {
+            let new_store = r#"
+                {
+                    locations: {},
+                    mark: "",
+                    stack: []
+                }
+                "#;
+            let data = serde_json::from_str(new_store)?;
+            if verbosity > 0 {
+                println!("Dhop data not found at '{}'. Creating new, empty, data store.", path.display());
+            }
+            Ok(data)
+        }
+    }
+
+    /// Save DhopStore data to a JSON file.
+    fn save(&self, path: &Path, verbosity: u8) -> serde_json::Result<()> {
+        // Get a JSON string that represents this data.
+        let json_string = serde_json::to_string(&self).expect("Cannot convert Dhop store to JSON!");
+        // Write the Dhop data store.
+        fs::write(&path, json_string).expect("Could not write to Dhop store!");
+        if verbosity > 1 {
+            println!("Wrote Dhop store to {}.", path.display())
+        }
+        Ok(())
+    }
+}
+
 fn goto_path(cmd_file_path: &PathBuf, desired_path: &PathBuf, verbosity: u8) {
     if desired_path.is_dir() {
-        let _ = fs::write(&cmd_file_path, format!("cd {}\n\n", desired_path.display()));
-        if verbosity > 0 {
-            println!("Wrote command file to '{}'.", cmd_file_path.display());
+        match fs::write(&cmd_file_path, format!("cd {}\n\n", desired_path.display())) {
+            Ok(_) => {
+                if verbosity > 0 {
+                    println!("Wrote command file to '{}'.", cmd_file_path.display());
+                }
+                println!("Moving to '{}'.", desired_path.display());
+            }
+            Err(_) => {
+                eprintln!("ERROR: Failed to write to '{}'!", cmd_file_path.display());
+            }
         }
-        println!("Moving to '{}'.", desired_path.display());
     }
     else {
-        println!("ERROR: '{}' is a non-existent path!", desired_path.display());
+        eprintln!("ERROR: '{}' is a non-existent path!", desired_path.display());
+    }
+}
+
+/// If a path is provided, use it. Otherwise, return the current working directory (CWD).
+fn resolve_path_or_cwd(path_arg: Option<&str>) -> Result<PathBuf, &str> {
+    match path_arg {
+        Some(p) => {
+            let path = PathBuf::from(p);
+            match path.is_dir() {
+                true => { Ok(path) }
+                false => { Err("Provided path is not a directory!") }
+            }
+        }
+        None => {
+            match env::current_dir() {
+                Ok(p) => { Ok(p) }
+                Err(_) => { Err("Could not read current directory!") }
+            }
+        }
     }
 }
 
@@ -129,26 +205,9 @@ fn main() {
     }
 
     // This is the Dhop data store. a json::JsonValue object.
-    let mut dhop_store = json::object!{};
-
-    // Check for the presence of a data file. If it exists, then load data from it.
-    let mut data_path: PathBuf = env::home_dir().unwrap();
-    data_path.push(DHOP_STORE);
-    if data_path.is_file() {
-        let file_contents = fs::read_to_string(&data_path).expect("ERROR: Can't read from Dhop store!");
-        dhop_store = json::parse(file_contents.as_str()).unwrap();
-        if verbosity > 1 {
-            println!("Loaded Dhop store from {}.", data_path.display());
-        }
-    }
-    else {
-        if verbosity > 1 {
-            println!("Data store '{}' doesn't exist! Creating new, empty, data store.", data_path.display());
-        }
-        dhop_store["locations"] = json::object!{};
-        dhop_store["mark"] = ".".into();
-        dhop_store["stack"] = json::array![];
-    }
+    let mut store_path: PathBuf = env::home_dir().expect("Unable to find home directory!");
+    store_path.push(DHOP_STORE);
+    let mut dhop_store = DhopStore::load(&store_path, verbosity).expect("Could not load store or create a new one!");
 
     // Check to see if a (sub)command was specified.
 
@@ -159,25 +218,14 @@ fn main() {
             }
 
             // 'set' needs a name and an optional path.
-            let name = sub_matches.get_one::<String>("name").expect("Name is required!").as_str();
-            let path_arg = sub_matches.get_one::<String>("path").map(|s| s.as_str());
+            let name = sub_matches.get_one::<String>("name").expect("Name is required!");
 
-            // Is a path provided?
-            let mut path = PathBuf::new();
-            if path_arg.is_none() {
-                // No path, use the current working directory.
-                path = env::current_dir().unwrap();
-            }
-            else {
-                path.push(path_arg.unwrap());
-                // Validate the user-supplied path.
-                if !path.is_dir() {
-                    println!("ERROR: {:?} is not a valid path!", path);
-                    return;
-                }
-            }
+            // If the user supplied a path, use it. Otherwise, use the current dir.
+            let path_arg = sub_matches.get_one::<String>("path").map(|s| s.as_str());
+            let path = resolve_path_or_cwd(path_arg).expect("Could not resolve path!");
+
             // Add the name and path to the store.
-            dhop_store["locations"][name] = path.to_str().into();
+            dhop_store.locations.insert(name.clone(), path.clone());
             println!("Set location '{}' to '{}'.", name, path.display());
         }
         Some(("go", sub_matches)) => {
@@ -189,10 +237,10 @@ fn main() {
                 println!("name = {:?}", name);
             }
             // See if the name exists in the store.
-            if dhop_store["locations"].has_key(name) {
+            if dhop_store.locations.contains_key(name) {
                 // Write an appropriate command to change to its path in the command file.
                 let mut path: PathBuf = PathBuf::new();
-                path.push(dhop_store["locations"][name].to_string());
+                path.push(dhop_store.locations[name].clone());
                 goto_path(&cmd_file_path, &path, verbosity);
             }
             else {
@@ -208,8 +256,8 @@ fn main() {
                 println!("name = {:?}", name);
             }
             // See if the name exists in the store.
-            if dhop_store["locations"].has_key(name) {
-                dhop_store["locations"].remove(name);
+            if dhop_store.locations.contains_key(name) {
+                dhop_store.locations.remove(name);
                 println!("Removed location named '{}'.", name);
             }
             else {
@@ -220,7 +268,7 @@ fn main() {
             if verbosity > 1 {
                 println!("'list' called!");
             }
-            println!("{}", dhop_store.pretty(3));
+            println!("{}", serde_json::to_string_pretty(&dhop_store).expect("Cannot format store as JSON!"));
         }
         Some(("path", sub_matches)) => {
             if verbosity > 1 {
@@ -231,9 +279,9 @@ fn main() {
                 println!("name = {:?}", name);
             }
             // See if the name exists in the store.
-            if dhop_store["locations"].has_key(name) {
+            if dhop_store.locations.contains_key(name) {
                 let mut path: PathBuf = PathBuf::new();
-                path.push(dhop_store["locations"][name].to_string());
+                path.push(dhop_store.locations[name].clone());
                 if verbosity < 1 {
                     println!("{}", path.display());
                 }
@@ -259,33 +307,28 @@ fn main() {
             if verbosity > 1 {
                 println!("'mark' called!");
             }
-            // Check to see if a path was provided.
+            // If the user supplied a path, use it. Otherwise, use the current dir.
             let path_arg = sub_matches.get_one::<String>("path").map(|s| s.as_str());
-            let mut path = PathBuf::new();
-            if path_arg.is_none() {
-                path = env::current_dir().unwrap();
-            }
-            else {
-                path.push(path_arg.unwrap());
-                if !path.is_dir() {
-                    println!("ERROR: {:?} is not a valid path!", path);
-                    return;
-                }
-            }
+            let path = resolve_path_or_cwd(path_arg).expect("Could not resolve path!");
             if verbosity > 1 {
                 println!("path = {:?}", path);
             }
-            dhop_store["mark"] = path.to_str().into();
+            dhop_store.mark = Some(path.clone());
             println!("Path '{}' is now marked.", path.display())
         }
         Some(("recall", _sub_matches)) => {
             if verbosity > 1 {
                 println!("'recall' called!");
             }
-            let path_arg = dhop_store["mark"].as_str();
-            let mut path = PathBuf::new();
-            path.push(path_arg.unwrap());
-            goto_path(&cmd_file_path, &path, verbosity);
+            match dhop_store.mark.clone() {
+                Some(p) => {
+                    goto_path(&cmd_file_path, &p, verbosity);
+                }
+                None => {
+                    println!("No path has been marked!");
+                    println!("Call 'mark' within a directory first.");
+                }
+            }
         }
         Some(("push", sub_matches)) => {
             if verbosity > 1 {
@@ -294,8 +337,8 @@ fn main() {
             let name = sub_matches.get_one::<String>("name").expect("Name is required!").as_str();
             let mut path: PathBuf = PathBuf::new();
             // See if the name exists in the store.
-            if dhop_store["locations"].has_key(name) {
-                path.push(dhop_store["locations"][name].to_string());
+            if dhop_store.locations.contains_key(name) {
+                path.push(dhop_store.locations[name].clone());
             }
             else {
                 // The name doesn't exist, but perhaps a path was used in its place.
@@ -308,31 +351,29 @@ fn main() {
                     println!("path = {:?}", path);
                 }
                 let cur_dir = env::current_dir().expect("No current dir?");
-                let _ = dhop_store["stack"].push(cur_dir.to_str());
+                dhop_store.stack.push(cur_dir.clone());
                 println!("Added '{}' to stack.", cur_dir.display());
                 goto_path(&cmd_file_path, &path, verbosity);
             }
             else {
-               println!("ERROR: No existing location named '{}', nor is it a path!!", name);
+               eprintln!("ERROR: No existing location named '{}', nor is it a path!!", name);
             }
         }
         Some(("pop", _sub_matches)) => {
             if verbosity > 1 {
                 println!("'pop' called!");
             }
-            if dhop_store["stack"].len() > 0 {
-                let last_stack_val = dhop_store["stack"].pop();
-                let path_arg = last_stack_val.as_str();
-                let mut path = PathBuf::new();
-                path.push(path_arg.unwrap());
-                goto_path(&cmd_file_path, &path, verbosity);
-            }
-            else {
-                println!("No paths exist on the stack! Going... nowhere.");
+            match dhop_store.stack.pop() {
+                Some(p) => {
+                    goto_path(&cmd_file_path, &p, verbosity);
+                }
+                None => {
+                    println!("No paths exist on the stack! Going... nowhere.");
+                }
             }
         }
         Some((x, _sub_matches)) => {
-            println!("ERROR: Unknown subcommand: '{}'!", x);
+            eprintln!("ERROR: Unknown subcommand: '{}'!", x);
         }
         None => {
             if matches.args_present() {
@@ -343,10 +384,10 @@ fn main() {
                         let arg_str = &args[i];
                         if arg_str.chars().next().unwrap() != '-' {
                             // See if the name exists in the store.
-                            if dhop_store["locations"].has_key(arg_str) {
+                            if dhop_store.locations.contains_key(arg_str) {
                                 // Write an appropriate command to change to its path in the command file.
                                 let mut path: PathBuf = PathBuf::new();
-                                path.push(dhop_store["locations"][arg_str].to_string());
+                                path.push(dhop_store.locations[arg_str].clone());
                                 goto_path(&cmd_file_path, &path, verbosity);
                             }
                             else {
@@ -359,7 +400,7 @@ fn main() {
                                     goto_path(&cmd_file_path, &path, verbosity);
                                 } else {
                                     // It's nothing recognizable.
-                                    println!("ERROR: Provided argument '{}' is neither a command, named location, or path!", arg_str);
+                                    eprintln!("ERROR: Provided argument '{}' is neither a command, named location, or path!", arg_str);
                                 }
                             }
                             break;
@@ -368,16 +409,16 @@ fn main() {
                 }
             }
             else {
-                println!("ERROR: No arguments provided!");
-                println!("Hint: Use --help for a list of commands");
+                eprintln!("ERROR: No arguments provided!");
+                eprintln!("Hint: Use --help for a list of commands");
             }
         }
     }
 
     // Write the Dhop data store.
-    let _ = fs::write(&data_path, json::stringify(dhop_store));
-    if verbosity > 1 {
-        println!("Wrote Dhop store to {}.", data_path.display())
+    if let Err(_) = dhop_store.save(&store_path, verbosity)
+    {
+        eprintln!("Failed to save Dhop store!");
     }
 }
 

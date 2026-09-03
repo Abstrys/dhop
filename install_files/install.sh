@@ -2,7 +2,7 @@
 
 if [[ $# -eq 1 ]]; then
   PATH_TO_INSTALL=$1
-elif [[ -e "$HOME/.local/gtif/bin/" ]] then
+elif [[ -e "$HOME/.local/bin/" ]] then
   PATH_TO_INSTALL="$HOME/.local/bin"
 else
   PATH_TO_INSTALL=$HOME/bin

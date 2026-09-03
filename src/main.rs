@@ -6,7 +6,8 @@
 ///
 /// Full documentation is in this file and in README.rst
 
-use clap::{Command, arg, command, ArgMatches};
+use clap::{Command, arg, command, ArgMatches, ArgAction, ValueHint, value_parser};
+use clap_complete::{generate_to, Shell};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
@@ -37,6 +38,17 @@ const CMD_PATH_HELP: &str = concat!(
     "Tip: You can use this to inject dhop-known locations into other CLI commands such as ",
     "'cd', 'cp', 'ls', and so on!\n",
 );
+
+const CMD_POP_HELP: &str = concat!(
+    "If --peek and --all are used at the same time, the *first* path on the stack is printed,\n",
+    "but no values on the stack are popped."
+);
+
+const CMD_SHELL_COMPLETE_HELP: &str = concat!(
+    "To enable command-line completion for dhop, 'source' the generated script in your current\n",
+    "session or via your shell initialization script ('.bashrc', '.zshrc', etc.).\n",
+);
+
 const ERR_HOME_DIR: &str = "ERROR: Cannot determine user's home directory!";
 
 /// The serialized data struct for Dhop. It holds all named locations, the marked location, and the
@@ -124,9 +136,8 @@ fn resolve_path_or_cwd(path_arg: Option<&str>) -> Result<PathBuf, &str> {
     }
 }
 
-/// Define the CLI interface and parse arguments from the command line, returning an
-/// [ArgMatches](https://docs.rs/clap/latest/clap/struct.ArgMatches.html).
-fn define_and_parse_args() -> ArgMatches {
+/// Define the CLI interface
+fn build_dhop_cmd() -> Command {
     command!()
         .version("2.0")
         .about(MAIN_DESC)
@@ -136,20 +147,23 @@ fn define_and_parse_args() -> ArgMatches {
                 .visible_aliases(["add"])
                 .about(CMD_SET_DESC)
                 .arg(arg!(<name> "A name that will be used to refer to this path."))
-                .arg(arg!([path] "Optional path to set. Uses current directory otherwise."))
+                .arg(
+                    arg!([path] "Optional path to set. Uses current directory otherwise.")
+                    .value_hint(ValueHint::DirPath)
+                )
                 .after_help(CMD_SET_HELP)
         )
         .subcommand(
             Command::new("go")
                 .aliases(["goto"])
                 .visible_aliases(["to"])
-                .about("Go to the named path. The default if no command is given.")
+                .about("Go to the named location. The default if no command is given.")
                 .arg(arg!(<name> "Named path to travel to."))
         )
         .subcommand(
             Command::new("forget")
                 .visible_aliases(["unset", "delete", "remove"])
-                .about("Forget a named path that was previously 'set'.")
+                .about("Forget a named location that was previously 'set'.")
                 .arg(arg!(<name> "Name to forget."))
         )
         .subcommand(
@@ -166,25 +180,53 @@ fn define_and_parse_args() -> ArgMatches {
         .subcommand(
             Command::new("mark")
                 .about("Marks a path to 'recall' later. There can be only one!")
-                .arg(arg!([path] "Optional path to mark. Uses current directory otherwise."))
+                .arg(
+                    arg!([path] "Optional path to mark. Uses current directory otherwise.")
+                    .value_hint(ValueHint::DirPath)
+                )
         )
         .subcommand(
             Command::new("recall")
                 .about("Return to the 'mark'ed path.")
-                .arg(arg!(--peek "Reveal the marked path, without traveling there."))
+                .arg(
+                    arg!(-p --peek "Reveal the marked path, without traveling there.")
+                    .action(ArgAction::SetTrue)
+                )
         )
         .subcommand(
             Command::new("push")
                 .about("Push the current path onto the stack and go to the named location or path.")
-                .arg(arg!([name] "A named location or path travel to."))
+                .arg(arg!([name] "A named location or path to move to."))
         )
         .subcommand(
             Command::new("pop")
                 .about("Pop the last path from the stack (and go there if not there already).")
-                .arg(arg!(--peek "Reveal the last path on the stack, without traveling there."))
+                .after_help(CMD_POP_HELP)
+                .arg(
+                    arg!(-a --all "Pop *all* values from the stack, unless --peek is used.")
+                    .action(ArgAction::SetTrue)
+                )
+                .arg(
+                    arg!(-p --peek "Reveal the last path on the stack (or first, with --all), without popping any values or traveling there.")
+                    .action(ArgAction::SetTrue)
+                )
+        )
+        .subcommand(
+            Command::new("shell-complete")
+                .about("Generate a shell completion script.")
+                .after_help(CMD_SHELL_COMPLETE_HELP)
+                .arg(
+                    arg!(-s --shell "Generate completions for a particular shell. If not used, the current $SHELL is assumed.")
+                    .action(ArgAction::Set)
+                    .value_parser(value_parser!(Shell))
+                )
+                .arg(
+                    arg!(-d --dir "The directory path to write the shell completion script.")
+                    .action(ArgAction::Set)
+                    .value_hint(ValueHint::DirPath)
+                )
         )
         .arg(arg!(-v --verbose... "Specify one or more times to increase verbosity. Default is minimal output.'"))
-        .get_matches()
 }
 
 /// Handle the "set" command.
@@ -296,13 +338,18 @@ fn handle_mark_cmd(sub_matches: &ArgMatches, dhop_store: &mut DhopStore, verbosi
 }
 
 /// Handle the "recall" command.
-fn handle_recall_cmd(_sub_matches: &ArgMatches, dhop_store: &mut DhopStore, cmd_file_path: &PathBuf, verbosity: u8) {
+fn handle_recall_cmd(sub_matches: &ArgMatches, dhop_store: &mut DhopStore, cmd_file_path: &PathBuf, verbosity: u8) {
     if verbosity > 1 {
         println!("'recall' called!");
     }
     match dhop_store.mark.clone() {
-        Some(p) => {
-            goto_path(&cmd_file_path, &p, verbosity);
+        Some(path) => {
+            if *sub_matches.get_one("peek").expect("Warning: Peek is unset!") {
+                // --peek was specified. Just print the path.
+                println!("{}", path.display());
+            } else {
+                goto_path(&cmd_file_path, &path, verbosity);
+            }
         }
         None => {
             println!("No path has been marked!");
@@ -344,18 +391,103 @@ fn handle_push_cmd(sub_matches: &ArgMatches, dhop_store: &mut DhopStore, cmd_fil
 }
 
 /// Handle the "pop" command.
-fn handle_pop_cmd(_sub_matches: &ArgMatches, dhop_store: &mut DhopStore, cmd_file_path: &PathBuf, verbosity: u8) {
+fn handle_pop_cmd(sub_matches: &ArgMatches, dhop_store: &mut DhopStore, cmd_file_path: &PathBuf, verbosity: u8) {
     if verbosity > 1 {
         println!("'pop' called!");
     }
-    match dhop_store.stack.pop() {
-        Some(p) => {
-            goto_path(&cmd_file_path, &p, verbosity);
+
+    // Check to see if `--all` was specified.
+    let pop_all: bool = *sub_matches.get_one("all").expect("Warning: 'all' value is unset!");
+
+    //
+    if *sub_matches.get_one("peek").expect("Warning: 'peek' value is unset!") {
+        if dhop_store.stack.is_empty() {
+            println!("No paths exist in the stack!");
+        } else {
+            let peek_path: &PathBuf;
+            if pop_all {
+                peek_path = dhop_store.stack.first().expect("Stack isn't empty, but has no first value?!");
+            } else {
+                peek_path = dhop_store.stack.last().expect("Stack isn't empty, but has no last value?!");
+            }
+            println!("'{}'", peek_path.display());
         }
-        None => {
-            println!("No paths exist on the stack! Going... nowhere.");
+    } else {
+        if pop_all {
+            if !dhop_store.stack.is_empty() {
+                // Drain all but the first value from the stack.
+                println!("Popping all paths from the stack.");
+                dhop_store.stack.drain(1..);
+            }
+        }
+        match dhop_store.stack.pop() {
+            Some(path) => {
+                goto_path(&cmd_file_path, &path, verbosity);
+            }
+            None => {
+                println!("No paths exist on the stack! Going... nowhere.");
+            }
         }
     }
+}
+
+fn handle_shell_complete_cmd(sub_matches: &ArgMatches, _dhop_store: &mut DhopStore, verbosity: u8) {
+    if verbosity > 1 {
+        println!("'shell-complete' called!");
+    }
+
+    let mut cmd = build_dhop_cmd();
+
+    let shell_option = sub_matches.get_one::<Shell>("shell");
+    let shell_type: Shell;
+
+    match shell_option {
+        Some(x) => {
+            shell_type = x.clone();
+            if verbosity > 1 {
+                println!("--shell invoked with '{}'", shell_type);
+            }
+        }
+        None => {
+            // Try getting the shell from the environment. If it isn't set, then provide a helpful
+            // error message.
+            shell_type = Shell::from_env()
+                         .expect("Could not determine shell from environment! Use the '--shell' option to specify a shell name.");
+        }
+    }
+
+    let out_dir_option = sub_matches.get_one::<PathBuf>("dir");
+    let out_dir: PathBuf;
+    match out_dir_option {
+        Some(dir_path) => {
+            if dir_path.is_dir() {
+                out_dir = dir_path.to_path_buf();
+            } else {
+                eprintln!("ERROR: '{}' is not a directory!", dir_path.display());
+                std::process::exit(1);
+            }
+        }
+        None => {
+           // See if a `.local/share` exists. If so, then write the file in `.local/share/dhop/`.
+           let mut dir_path: PathBuf = env::home_dir().expect(ERR_HOME_DIR);
+           dir_path.push(".local/share");
+           if dir_path.is_dir() {
+               dir_path.push("dhop");
+           }
+           else {
+               // Use the current directory as a fallback.
+               dir_path = env::current_dir().expect("No current dir?");
+           }
+           out_dir = dir_path.to_path_buf();
+        }
+    }
+
+    let mut script_path: PathBuf = out_dir.clone();
+    script_path.push(format!("dhop.{}", shell_type));
+    println!("Generating completion script: '{}'", script_path.display());
+    generate_to(shell_type, &mut cmd, "dhop", out_dir).expect("ERROR: Could not generate completion script!");
+    println!("To use it, 'source' the file in your current session, or from your shell initialization script:\n");
+    println!("   source \"{}\"\n", script_path.display());
 }
 
 /// Handles the case where no command was provided (it may, however, be a location or path).
@@ -399,7 +531,7 @@ fn handle_non_command_arg(matches: &ArgMatches, dhop_store: &mut DhopStore, cmd_
 ///
 fn main() {
     // Parse
-    let matches = define_and_parse_args();
+    let matches = build_dhop_cmd().get_matches();
 
     // Set the verbosity level for output.
     let verbosity = *matches.get_one::<u8>("verbose").expect("ERROR: Unable to determine verbosity level!");
@@ -454,6 +586,9 @@ fn main() {
         }
         Some(("pop", sub_matches)) => {
             handle_pop_cmd(&sub_matches, &mut dhop_store, &cmd_file_path, verbosity);
+        }
+        Some(("shell-complete", sub_matches)) => {
+            handle_shell_complete_cmd(&sub_matches, &mut dhop_store, verbosity);
         }
         Some((x, _sub_matches)) => {
             eprintln!("ERROR: Unknown subcommand: '{}'!", x);

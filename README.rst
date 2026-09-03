@@ -83,9 +83,10 @@ recall
 
 .. code:: sh
 
-   dhop recall
+   dhop recall [--peek]
 
-Goes to the directory that was last marked.
+Goes to the directory that was last marked. You can use ``--peek`` to look at the value without
+going there.
 
 
 push
@@ -104,13 +105,34 @@ pop
 
 .. code:: sh
 
-   dhop pop [option]
+   dhop pop [--all] [--peek]
 
-Pops the last pushed location from the stack, and then transports you to that location.  You can set
-the following `[option]`:
+Pops the last pushed location from the stack, and then transports you to that location. You can use
+the following flags to modify its behavior:
 
-* `all` - Pops all of the pushed locations from the stack, then transports you to the final location
-  popped from the stack.
+* `--all` - Pops all of the pushed locations from the stack, then transports you to the final location
+  popped from the stack, unless `--peek` is used.
+
+* `--peek` - Print the last value (or first, if ``--all`` is used) on the stack. Does not pop any
+  values from the stack, nor does it transport you anywhere.
+
+
+shell-complete
+--------------
+
+.. code:: sh
+
+   dhop shell-complete [--shell <shell_name>] [--dir <dir_path>]
+
+Generates a shell completion script. By default, the script will be generated for the current shell
+and placed in ``~/.local/share/dhop/`` if a ``.local/share/`` directory exists, or within the
+current directory if it doesn't. The script will be named ``dhop.<shell_name>`` (for example,
+``dhop.bash`` for the bash shell).
+
+Alternatively, the ``--shell`` and ``--dir`` flags can be used to set the shell name and directory
+name, respectively.
+
+The currently-supported shells are: ``bash``, ``elvish``, ``fish``, ``powershell``, and ``zsh``.
 
 
 help

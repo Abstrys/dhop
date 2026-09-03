@@ -6,7 +6,7 @@
 ///
 /// Full documentation is in this file and in README.rst
 
-use clap::{Command, arg, command};
+use clap::{Command, arg, command, ArgMatches};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
@@ -37,6 +37,7 @@ const CMD_PATH_HELP: &str = concat!(
     "Tip: You can use this to inject dhop-known locations into other CLI commands such as ",
     "'cd', 'cp', 'ls', and so on!\n",
 );
+const ERR_HOME_DIR: &str = "ERROR: Cannot determine user's home directory!";
 
 /// The serialized data struct for Dhop. It holds all named locations, the marked location, and the
 /// push/pop stack.
@@ -125,11 +126,10 @@ fn resolve_path_or_cwd(path_arg: Option<&str>) -> Result<PathBuf, &str> {
     }
 }
 
-///
-/// Main program sequence.
-///
-fn main() {
-    let matches = command!()
+/// Define the CLI interface and parse arguments from the command line, returning an
+/// [ArgMatches](https://docs.rs/clap/latest/clap/struct.ArgMatches.html).
+fn parse_cli_args() -> ArgMatches {
+    command!()
         .version("2.0")
         .about(MAIN_DESC)
         .arg(arg!([location] "Location to 'go' to."))
@@ -186,16 +186,24 @@ fn main() {
                 .arg(arg!(--peek "Reveal the last path on the stack, without traveling there."))
         )
         .arg(arg!(-v --verbose... "Specify one or more times to increase verbosity. Default is minimal output.'"))
-        .get_matches();
+        .get_matches()
+}
+
+///
+/// Main program sequence.
+///
+fn main() {
+    // Parse
+    let matches = parse_cli_args();
 
     // Set the verbosity level for output.
-    let verbosity: u8 = *matches.get_one::<u8>("verbose").unwrap();
+    let verbosity: u8 = *matches.get_one::<u8>("verbose").expect("ERROR: Unable to determine verbosity level!");
     if verbosity > 1 {
         println!("Debug output set to level {}", verbosity);
     }
 
     // Remove the command file if it exists.
-    let mut cmd_file_path: PathBuf = env::home_dir().unwrap();
+    let mut cmd_file_path: PathBuf = env::home_dir().expect(ERR_HOME_DIR);
     cmd_file_path.push(DHOP_CMD_FILE);
     if cmd_file_path.is_file() {
         if verbosity > 1 {
@@ -205,12 +213,11 @@ fn main() {
     }
 
     // This is the Dhop data store. a json::JsonValue object.
-    let mut store_path: PathBuf = env::home_dir().expect("Unable to find home directory!");
+    let mut store_path: PathBuf = env::home_dir().expect(ERR_HOME_DIR);
     store_path.push(DHOP_STORE);
-    let mut dhop_store = DhopStore::load(&store_path, verbosity).expect("Could not load store or create a new one!");
+    let mut dhop_store = DhopStore::load(&store_path, verbosity).expect("ERROR: Could not load store or create a new one!");
 
     // Check to see if a (sub)command was specified.
-
     match matches.subcommand() {
         Some(("set", sub_matches)) => {
             if verbosity > 2 {
@@ -382,7 +389,7 @@ fn main() {
                     // Look for the first argument without a '-' in front of it.
                     for i in 1..args.len() {
                         let arg_str = &args[i];
-                        if arg_str.chars().next().unwrap() != '-' {
+                        if arg_str.chars().next().is_some() {
                             // See if the name exists in the store.
                             if dhop_store.locations.contains_key(arg_str) {
                                 // Write an appropriate command to change to its path in the command file.

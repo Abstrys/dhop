@@ -139,7 +139,7 @@ fn resolve_path_or_cwd(path_arg: Option<&str>) -> Result<PathBuf, &str> {
 /// Define the CLI interface
 fn build_dhop_cmd() -> Command {
     command!()
-        .version("2.0")
+        .version("2.0.1")
         .about(MAIN_DESC)
         .arg(arg!([location] "Location to 'go' to."))
         .subcommand(

@@ -139,9 +139,11 @@ fn resolve_path_or_cwd(path_arg: Option<&str>) -> Result<PathBuf, &str> {
 /// Define the CLI interface
 fn build_dhop_cmd() -> Command {
     command!()
+        .bin_name("dhop")
         .version("2.0.1")
         .about(MAIN_DESC)
-        .arg(arg!([location] "Location to 'go' to."))
+        .arg(arg!([location] "Location to 'go' to (if no command is given)."))
+        .disable_version_flag(true) // Disable the normal '-V --version' flag.
         .subcommand(
             Command::new("set")
                 .visible_aliases(["add"])
@@ -157,7 +159,7 @@ fn build_dhop_cmd() -> Command {
             Command::new("go")
                 .aliases(["goto"])
                 .visible_aliases(["to"])
-                .about("Go to the named location. The default if no command is given.")
+                .about("Go to the named location. The default operation if no command is given.")
                 .arg(arg!(<name> "Named path to travel to."))
         )
         .subcommand(
@@ -226,7 +228,12 @@ fn build_dhop_cmd() -> Command {
                     .value_hint(ValueHint::DirPath)
                 )
         )
-        .arg(arg!(-v --verbose... "Specify one or more times to increase verbosity. Default is minimal output.'"))
+        .arg(arg!(--debug "Specify one or more times to increase output (debug level).'")
+             .hide(true)
+        )
+        .arg(arg!(-v --version "Print the dhop version.")
+             .action(ArgAction::Version)
+        )
 }
 
 /// Handle the "set" command.

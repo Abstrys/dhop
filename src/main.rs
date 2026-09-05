@@ -221,7 +221,7 @@ fn build_dhop_cmd() -> Command {
                     .value_parser(value_parser!(Shell))
                 )
                 .arg(
-                    arg!(-d --dir "The directory path to write the shell completion script.")
+                    arg!(-d --dir "The directory path to write the shell completion script. It must already exist.")
                     .action(ArgAction::Set)
                     .value_hint(ValueHint::DirPath)
                 )
@@ -468,15 +468,20 @@ fn handle_shell_complete_cmd(sub_matches: &ArgMatches, _dhop_store: &mut DhopSto
             }
         }
         None => {
-           // See if a `.local/share` exists. If so, then write the file in `.local/share/dhop/`.
+           // See if a `.local/share` exists. If so, then write the file in `.local/share/dhop/`,
+           // creating the 'dhop' directory if necessary.
            let mut dir_path: PathBuf = env::home_dir().expect(ERR_HOME_DIR);
            dir_path.push(".local/share");
            if dir_path.is_dir() {
                dir_path.push("dhop");
+               // Create the 'dhop' directory (if it doesn't already exist).
+               if !dir_path.is_dir() {
+                   fs::create_dir_all(&dir_path).expect(format!("ERROR: Could not create directory: {}", dir_path.display()).as_str());
+               }
            }
            else {
                // Use the current directory as a fallback.
-               dir_path = env::current_dir().expect("No current dir?");
+               dir_path = env::current_dir().expect("ERROR: No current dir?");
            }
            out_dir = dir_path.to_path_buf();
         }

@@ -140,7 +140,6 @@ fn resolve_path_or_cwd(path_arg: Option<&str>) -> Result<PathBuf, &str> {
 fn build_dhop_cmd() -> Command {
     command!()
         .bin_name("dhop")
-        .version("2.0.1")
         .about(MAIN_DESC)
         .arg(arg!([location] "Location to 'go' to (if no command is given)."))
         .disable_version_flag(true) // Disable the normal '-V --version' flag.
@@ -171,6 +170,9 @@ fn build_dhop_cmd() -> Command {
         .subcommand(
             Command::new("list")
                 .about("List all known paths.")
+                .arg(arg!(--json "Display output in JSON instead of plain text.")
+                    .action(ArgAction::SetTrue)
+                )
         )
         .subcommand(
             Command::new("path")
@@ -228,8 +230,9 @@ fn build_dhop_cmd() -> Command {
                     .value_hint(ValueHint::DirPath)
                 )
         )
-        .arg(arg!(--debug "Specify one or more times to increase output (debug level).'")
+        .arg(arg!(-l --debug "Debug level. Specify multiple times to increase level.'")
              .hide(true)
+             .action(ArgAction::Count)
         )
         .arg(arg!(-v --version "Print the dhop version.")
              .action(ArgAction::Version)
@@ -292,11 +295,52 @@ fn handle_forget_cmd(sub_matches: &ArgMatches, dhop_store: &mut DhopStore, verbo
 }
 
 /// Handle the "list" command.
-fn handle_list_cmd(_sub_matches: &ArgMatches, dhop_store: &DhopStore, verbosity: u8) {
+fn handle_list_cmd(sub_matches: &ArgMatches, dhop_store: &DhopStore, verbosity: u8) {
     if verbosity > 1 {
         println!("'list' called!");
     }
-    println!("{}", serde_json::to_string_pretty(&dhop_store).expect("ERROR: Cannot format store as JSON!"));
+    let use_json: bool = *sub_matches.get_one("json").expect("Warning: 'json' value is unset!");
+    if use_json {
+        println!("{}", serde_json::to_string_pretty(&dhop_store).expect("ERROR: Cannot format store as JSON!"));
+    } else {
+        // Print the named paths ("locations") first.
+        println!("Locations\n=========\n"); // The extra newline is intentional.
+        if dhop_store.locations.is_empty() {
+            println!("No locations set! Use 'dhop set' to set a location.\n");
+        }
+        else {
+            // get a list of sorted keys.
+            let mut keys: Vec<_> = dhop_store.locations.keys().collect();
+            keys.sort();
+            for keyname in keys.iter() {
+                let path = dhop_store.locations[keyname.as_str()].clone();
+                println!("{}: {}", keyname, path.display());
+            }
+            println!("");
+        }
+        // Next, print the "mark"ed location.
+        println!("Mark\n====\n");
+        match dhop_store.mark.clone() {
+            Some(path) => {
+                println!("{}\n", path.display());
+            }
+            None => {
+                println!("No marked path! Use 'dhop mark' to mark the current path.\n");
+            }
+        }
+        // Finally, print the stack.
+        println!("Stack\n=====\n");
+        if dhop_store.stack.is_empty() {
+            println!("No paths on the stack! Use 'dhop push' to add the current path.\n");
+        } else {
+            let mut i = 0;
+            for path in dhop_store.stack.iter() {
+                println!("{:>3}: {}", i, path.display());
+                i = i + 1;
+            }
+            println!("")
+        }
+    }
 }
 
 /// Handle the "path" command.
@@ -546,7 +590,7 @@ fn main() {
     let matches = build_dhop_cmd().get_matches();
 
     // Set the verbosity level for output.
-    let verbosity = *matches.get_one::<u8>("verbose").expect("ERROR: Unable to determine verbosity level!");
+    let verbosity = *matches.get_one::<u8>("debug").expect("ERROR: Unable to determine verbosity level!");
     if verbosity > 1 {
         println!("Debug output set to level {}", verbosity);
     }

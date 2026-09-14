@@ -5,8 +5,7 @@
 dhop_info.txt
 __pycache__
 output/
-Cargo.lock
-dist
+dist/
 
 # Added by cargo
 
